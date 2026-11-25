@@ -156,6 +156,9 @@ bit timing, crystal load caps, HV divider scale).
 Issues and pull requests welcome, especially from anyone who has done IMA or OpenInverter work.
 Criticism of the whole approach is fine too.
 
+To get an AI assistant to review the design, give it [`docs/AI_REVIEW_BRIEF.md`](docs/AI_REVIEW_BRIEF.md)
+and access to this repo.
+
 ## Licence
 
 - **Hardware** (everything in `hw/`, including the scripts that generate the board, and the images):
