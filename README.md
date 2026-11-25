@@ -79,7 +79,7 @@ The HV strip is on the right. Only four parts cross the gap to it, and each is a
 the two AQV214EH optoMOS (K2, K3), the AMC1311 (U12) and the isolated DC-DC (PS1). There is a
 1.2 mm slot under each of those, where dirt or flux trapped under the body could bridge pads. At
 150 V or less the 5.6 mm band gives enough creepage without a slot elsewhere. The pack terminal
-J3 overhangs the top edge with its wire entry facing out.
+J3 overhangs the top edge with its wire entry facing out, and the USB-C face sits about 0.85 mm past the bottom edge.
 
 <p align="center">
   <img src="docs/img/board_top.png" width="49%" alt="Top, ray-traced">
@@ -112,7 +112,7 @@ with KiCad 7's Python (`pcbnew` importable).
 |---|---|
 | netlist + placement | `python3 build_board.py unrouted.kicad_pcb` (also writes `parts.json`) |
 | route | `python3 route.py unrouted.kicad_pcb routed.kicad_pcb`, then `finish.py` and `postfix.py` |
-| later changes (ECOs on the routed board) | `eco_v04_terminations.py`, `eco_v04_route.py`, `eco_v04_j3_slots.py` |
+| later changes (ECOs on the routed board) | `eco_v04_terminations.py`, `eco_v04_route.py`, `eco_v04_j3_slots.py`, `eco_v04_usb.py` |
 | silkscreen | `python3 tidy_silk.py routed.kicad_pcb tidy.kicad_pcb` |
 | planes, DRC, JLC files | `python3 fab.py tidy.kicad_pcb ze2-mcm-spoof.kicad_pcb out/jlc` |
 | layer images | `python3 photo_render.py ze2-mcm-spoof.kicad_pcb ../docs/img/layers` |
@@ -122,7 +122,7 @@ with KiCad 7's Python (`pcbnew` importable).
 
 The tests check: KiCad DRC is clean apart from two accepted items (footprint-library notices, and
 the USB-C peg holes in KiCad's own footprint); no copper in the HV band except the four isolation
-parts; slots only under those parts; J3's overhang; the antenna keep-out; silkscreen text size; the
+parts; slots only under those parts; J3 and USB-C overhangs; the antenna keep-out; silkscreen text size; the
 CAN termination and bypass wiring in the netlist; and the JLC files against the board.
 
 | Folder | Contents |

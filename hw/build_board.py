@@ -430,6 +430,7 @@ MOVES.update({
     "RS1": ((115.0, 24.5), 90), "RS2": ((115.0, 29.5), 90), "RS3": ((115.0, 34.5), 90), "RS4": ((115.0, 39.5), 90),
     "RS5": ((115.0, 44.5), 90), "C41": ((117.6, 44.5), 90), "RF3": ((111.5, 18.0), 90), "RF4": ((116.5, 18.0), 90),
 })
+MOVES["J5"] = ((78.0, 95.13), 0)  # USB-C face ~0.85 mm past the bottom edge
 for ref, (pos, rot) in MOVES.items():
     PARTS[ref]["pos"], PARTS[ref]["rot"] = pos, rot
 

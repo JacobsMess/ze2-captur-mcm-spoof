@@ -1,5 +1,5 @@
-** Drc report for spoof_board_v04d.kicad_pcb **
-** Created on 2026-11-25 16:37:42 **
+** Drc report for spoof_board_v04e.kicad_pcb **
+** Created on 2026-11-25 16:51:42 **
 
 ** Found 202 DRC violations **
 [lib_footprint_issues]: The current configuration does not include the library ''.
@@ -310,7 +310,7 @@
     @(124.0000 mm, 54.0000 mm): Footprint R34
 [lib_footprint_issues]: The current configuration does not include the library ''.
     Local override; Severity: warning
-    @(128.0000 mm, 144.0000 mm): Footprint J5
+    @(128.0000 mm, 145.1300 mm): Footprint J5
 [lib_footprint_issues]: The current configuration does not include the library ''.
     Local override; Severity: warning
     @(66.0000 mm, 87.0000 mm): Footprint C15
@@ -598,20 +598,20 @@
     @(128.0000 mm, 88.0000 mm): Footprint C38
 [hole_clearance]: Hole clearance violation (board setup constraints hole clearance 0.2500 mm; actual 0.1944 mm)
     Rule: board setup constraints hole; Severity: error
-    @(125.1100 mm, 141.3950 mm): NPTH pad of J5
-    @(124.8000 mm, 140.3200 mm): Pad A1 [GND] of J5 on F.Cu
+    @(125.1100 mm, 142.5250 mm): NPTH pad of J5
+    @(124.8000 mm, 141.4500 mm): Pad A1 [GND] of J5 on F.Cu
 [hole_clearance]: Hole clearance violation (board setup constraints hole clearance 0.2500 mm; actual 0.1944 mm)
     Rule: board setup constraints hole; Severity: error
-    @(125.1100 mm, 141.3950 mm): NPTH pad of J5
-    @(124.8000 mm, 140.3200 mm): Pad B12 [GND] of J5 on F.Cu
+    @(125.1100 mm, 142.5250 mm): NPTH pad of J5
+    @(124.8000 mm, 141.4500 mm): Pad B12 [GND] of J5 on F.Cu
 [hole_clearance]: Hole clearance violation (board setup constraints hole clearance 0.2500 mm; actual 0.1944 mm)
     Rule: board setup constraints hole; Severity: error
-    @(130.8900 mm, 141.3950 mm): NPTH pad of J5
-    @(131.2000 mm, 140.3200 mm): Pad A12 [GND] of J5 on F.Cu
+    @(130.8900 mm, 142.5250 mm): NPTH pad of J5
+    @(131.2000 mm, 141.4500 mm): Pad A12 [GND] of J5 on F.Cu
 [hole_clearance]: Hole clearance violation (board setup constraints hole clearance 0.2500 mm; actual 0.1944 mm)
     Rule: board setup constraints hole; Severity: error
-    @(130.8900 mm, 141.3950 mm): NPTH pad of J5
-    @(131.2000 mm, 140.3200 mm): Pad B1 [GND] of J5 on F.Cu
+    @(130.8900 mm, 142.5250 mm): NPTH pad of J5
+    @(131.2000 mm, 141.4500 mm): Pad B1 [GND] of J5 on F.Cu
 
 ** Found 0 unconnected pads **
 

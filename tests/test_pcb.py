@@ -85,3 +85,9 @@ def test_silk_text_min_size(board):
         t = f.Reference()
         if t.IsVisible() and t.IsOnLayer(pcbnew.F_SilkS):
             assert mm(t.GetTextSize().y) >= 0.79 and mm(t.GetTextThickness()) >= 0.149, f.GetReference()
+
+
+def test_usb_c_overhangs_bottom_edge(board):
+    f = board.FindFootprintByReference("J5")
+    face = max(mm(g.GetBoundingBox().GetBottom()) for g in f.GraphicalItems() if g.GetLayer() == pcbnew.F_Fab) - OY
+    assert 98.3 < face < 99.5, f"USB-C face at {face:.2f} mm, board edge at 98"
