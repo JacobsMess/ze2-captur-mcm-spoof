@@ -11,7 +11,7 @@ inverter.
 </p>
 
 > **Status: untested design.** No boards have been made. Several parts are placeholders (listed
-> [below](#before-ordering)), and the JLC LCSC part numbers are not filled in yet. The design was
+> [below](#before-ordering)). The BOM carries LCSC numbers, Basic or Preferred wherever JLC has one. The design was
 > produced with an AI assistant from my brief and is up for review ([feedback](#feedback) welcome).
 > Don't connect it to a pack on the strength of this README.
 
@@ -22,7 +22,7 @@ inverter.
 | Stage 1 | modules in parallel, 34S2P, about 130 V; stock MCM fed spoofed signals |
 | Stage 2 | 68S, about 260 V, MCM removed, ZombieVerter V1 + Toyota inverter (OpenInverter logic board) |
 | MCU | ESP32-S3-WROOM-1-N8R2 (8 MB flash, Wi-Fi: SavvyCAN streaming over GVRET, OTA updates) |
-| CAN | 4 buses: CAN1 EV (TWAI), CAN2/CAN3 the MCM and PCM halves of the IMA bus, CAN4 dash tap (MCP2515 each) |
+| CAN | 4 buses: CAN1 EV (TWAI), CAN2/CAN3 the MCM and PCM halves of the IMA bus, CAN4 dash tap (MCP2518FD each, 32-frame receive FIFO) |
 | Spoofing | 9 cell taps (resistor divider off the real pack bus), 3 NTC lines (DAC + op-amps), Hall current offset (+/-125 mV) |
 | Contactors | Captur contactors and precharge driven by the board: high-side drivers + low-side master FET behind a window watchdog |
 | HV side | stage 1 only, rated 150 V, 5.6 mm copper-free band, short slots under the four isolation parts |
@@ -90,12 +90,22 @@ J3 overhangs the top edge with its wire entry facing out, and the USB-C face sit
 
 - Placeholders to check against datasheets: VND7050AJ drivers (stand-in footprint, assumed
   pinout), TPS3431 watchdog, LM74700 ideal-diode controller, the isolated DC-DC footprint (R1SX-0505
-  on a Murata NXE stand-in), the K4 relay pin map (COM must be the PCM side), the AQY212GS pinout
-  and the FETs.
-- Fill in LCSC part numbers in [`hw/out/jlc/bom.csv`](hw/out/jlc/bom.csv) and check rotations in
-  JLC's placement preview.
+  on a Murata NXE stand-in), the K4 relay pin map (COM must be the PCM side), the AQY212GS and
+  H24VNT2B pinouts, and the SMMS0630 inductor on the SRP7028A land pattern.
+- Check rotations in JLC's placement preview.
 - Measure the stock car first: tap input impedance, NTC pull-ups, Hall sensor zero and scale, and a
-  SavvyCAN log of the IMA bus (bus load decides whether the MCP2515s keep up).
+  SavvyCAN log of the IMA bus.
+- Trim `HV_DIV_X1000` in `firmware/main/config.h` against a meter on the pack: the bus-sense divider
+  uses 1 % Basic parts.
+
+## Ordering at JLCPCB
+
+[`hw/out/jlc/`](hw/out/jlc/) has the gerbers, BOM and CPL. The BOM picks are in
+[`hw/jlc_parts.py`](hw/jlc_parts.py) and [`cost.md`](hw/out/jlc/cost.md) has the estimate: about $50 of
+parts per board and 23 Extended SMT part types ($3 loading fee each). Fit the five Molex/Phoenix
+connectors by hand to save another $15 of fees. Three parts aren't stocked at JLC (AQV214EH optoMOS,
+TPS3431 watchdog, R1SX-0505 DC-DC): use JLC global sourcing or fit them by hand. The only passives kept
+Extended on purpose are the 0.1 % tap-ladder resistors, which set how evenly the MCM sees the blocks.
 
 ## Firmware
 
@@ -104,10 +114,10 @@ covers all four CAN buses, the IMA man-in-the-middle, the spoofing, contactor se
 protection ladder. It also streams everything to SavvyCAN over Wi-Fi (GVRET) and takes firmware updates
 over Wi-Fi with rollback, accepted only with the ignition off and the contactors open.
 
-A simulation build runs the real firmware against modelled buses and MCP2515s on Espressif's ESP32-S3
-QEMU, with all four buses up to 100 % load. The S3 itself has headroom: core 1 (CAN) peaks at 54-70 %
-and core 0 at 35-45 %. The weak point is the MCP2515's two-frame receive buffer. See
-[`firmware/README.md`](firmware/README.md) for the numbers and what to do about it.
+A simulation build runs the real firmware against modelled buses and MCP2518FDs on Espressif's ESP32-S3
+QEMU, with all four buses up to 100 % load. No frames are lost in any case; at realistic loads core 1
+(CAN) runs at 22-68 % and core 0 at 18-39 %. See [`firmware/README.md`](firmware/README.md) for the
+numbers.
 
 ## Building from source
 
@@ -118,9 +128,9 @@ with KiCad 7's Python (`pcbnew` importable).
 |---|---|
 | netlist + placement | `python3 build_board.py unrouted.kicad_pcb` (also writes `parts.json`) |
 | route | `python3 route.py unrouted.kicad_pcb routed.kicad_pcb`, then `finish.py` and `postfix.py` |
-| later changes (ECOs on the routed board) | `eco_v04_terminations.py`, `eco_v04_route.py`, `eco_v04_j3_slots.py`, `eco_v04_usb.py` |
+| later changes (ECOs on the routed board) | `eco_v04_terminations.py`, `eco_v04_route.py`, `eco_v04_j3_slots.py`, `eco_v04_usb.py`, `eco_v05_jlc.py` (MCP2518FD, JLC part swaps) |
 | silkscreen | `python3 tidy_silk.py routed.kicad_pcb tidy.kicad_pcb` |
-| planes, DRC, JLC files | `python3 fab.py tidy.kicad_pcb ze2-mcm-spoof.kicad_pcb out/jlc` |
+| planes, DRC, JLC files | `python3 fab.py tidy.kicad_pcb ze2-mcm-spoof.kicad_pcb out/jlc` (LCSC picks from `jlc_parts.py`) |
 | layer images | `python3 photo_render.py ze2-mcm-spoof.kicad_pcb ../docs/img/layers` |
 | 3D render | `EXPORT_DIR=scene KICAD_3D_DIRS=<kicad 9 3dmodels>:<kicad 7 3dmodels> xvfb-run -a python3 render3d.py ze2-mcm-spoof.kicad_pcb ../docs/img/layers_top.png x`, then `python3 blender_render.py scene/scene.json ../docs/img/board 64 1800` (`pip install bpy`) |
 | schematic sheets | `python3 docs/schematic.py` |
@@ -129,7 +139,9 @@ with KiCad 7's Python (`pcbnew` importable).
 The tests check: KiCad DRC is clean apart from two accepted items (footprint-library notices, and
 the USB-C peg holes in KiCad's own footprint); no copper in the HV band except the four isolation
 parts; slots only under those parts; J3 and USB-C overhangs; the antenna keep-out; silkscreen text size; the
-CAN termination and bypass wiring in the netlist; and the JLC files against the board.
+CAN termination and bypass wiring in the netlist; the JLC files against the board, with an LCSC number on
+every line and Basic/Preferred passives; and the firmware against the hardware (GPIO map, CAN clock and
+bit timing, crystal load caps, HV divider scale).
 
 | Folder | Contents |
 |---|---|

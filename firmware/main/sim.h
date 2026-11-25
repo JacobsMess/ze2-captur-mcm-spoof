@@ -1,4 +1,4 @@
-// Simulation build only: traffic generators for the four buses and the MCP2515 register-level models.
+// Simulation build only: traffic generators for the four buses and the MCP2518FD register-level models.
 #pragma once
 #include <stdbool.h>
 #include <stddef.h>

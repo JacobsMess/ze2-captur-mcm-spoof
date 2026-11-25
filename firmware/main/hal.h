@@ -1,5 +1,5 @@
 // Hardware abstraction. hal_hw.c drives the real board; hal_sim.c (CONFIG_ZE2_SIM) replaces the SPI bus,
-// MCP2515s, TWAI, I2C and GPIO with models so the same driver and application code runs in QEMU.
+// MCP2518FDs, TWAI, I2C and GPIO with models so the same driver and application code runs in QEMU.
 #pragma once
 #include <stdbool.h>
 #include <stddef.h>
@@ -8,7 +8,7 @@
 
 void board_hal_init(void);
 
-// MCP2515 chip select index: 0 = CAN2 (MCM), 1 = CAN3 (PCM), 2 = CAN4 (dash)
+// CAN controller (MCP2518FD) chip select index: 0 = CAN2 (MCM), 1 = CAN3 (PCM), 2 = CAN4 (dash)
 #define MCP_COUNT 3
 void hal_spi_xfer(int chip, const uint8_t *tx, uint8_t *rx, size_t len);
 bool hal_mcp_int_asserted(int chip);              // INT pin low

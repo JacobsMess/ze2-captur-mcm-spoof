@@ -68,14 +68,14 @@ r("R61", "5.1k", "CC2", "GND", (84.0, 89.5), 90)
 part("D10", ("Diode_SMD", "D_SOD-123"), "B5819W", "B5819W", {"1": "+5V", "2": "VBUS"}, (78.8, 86.6), 0)
 
 # ---------------------------------------------------------------- power input (sheet 1)
-part("F1", ("Fuse", "Fuse_1812_4532Metric"), "2A PTC", "PTC 1812 2A 30V", {"1": "VIG_RAW", "2": "VIG_F"}, (52.0, 38.0), 0)
+part("F1", ("Fuse", "Fuse_1812_4532Metric"), "2A PTC", "BSMD1812-200-30V", {"1": "VIG_RAW", "2": "VIG_F"}, (52.0, 38.0), 0)
 part("U1", ("Package_TO_SOT_SMD", "SOT-23-6"), "LM74700-Q1", "LM74700QDBVRQ1",
      {"1": "LM_VCAP", "2": "VIG_F", "3": "GND", "4": "VIG_F", "5": "LM_GATE", "6": "VBAT_P"}, (58.0, 42.0), 0,
      "PLACEHOLDER pinout - verify against datasheet")
 c("C1", "100n", "LM_VCAP", "VIG_F", (58.0, 45.5), 0)
-part("Q1", ("Package_TO_SOT_SMD", "TO-252-2"), "N-FET 40V", "PLACEHOLDER 40V N-FET DPAK (e.g. auto-grade 40V 5mOhm)",
+part("Q1", ("Package_TO_SOT_SMD", "TO-252-2"), "NCE6020AK", "NCE6020AK",
      {"1": "LM_GATE", "2": "VBAT_P", "3": "VIG_F"}, (66.0, 40.0), 0)
-part("D1", ("Diode_SMD", "D_SMC"), "SMCJ33A", "SMCJ33A", {"1": "VBAT_P", "2": "GND"}, (66.0, 48.0), 0)
+part("D1", ("Diode_SMD", "D_SMC"), "SMCJ33CA", "SMCJ33CA", {"1": "VBAT_P", "2": "GND"}, (66.0, 48.0), 0)
 c("C2", "10u 50V", "VBAT_P", "GND", (73.0, 40.0), 90, fp=C1206)
 c("C3", "10u 50V", "VBAT_P", "GND", (76.0, 40.0), 90, fp=C1206)
 c("C4", "10u 50V", "VBAT_P", "GND", (75.0, 44.0), 90, fp=C1206)
@@ -83,8 +83,8 @@ c("C4", "10u 50V", "VBAT_P", "GND", (75.0, 44.0), 90, fp=C1206)
 part("U2", ("Package_TO_SOT_SMD", "SOT-23-6"), "LMR16006Y-Q1", "LMR16006YQDDCRQ1",
      {"1": "BUCK_CB", "2": "GND", "3": "BUCK_FB", "4": "VBAT_P", "5": "VBAT_P", "6": "BUCK_SW"}, (58.0, 58.0), 0)
 c("C5", "100n", "BUCK_CB", "BUCK_SW", (58.0, 54.5), 0)
-part("D3B", ("Diode_SMD", "D_SMB"), "SS36", "SS36 60V 3A Schottky", {"1": "BUCK_SW", "2": "GND"}, (58.0, 64.0), 180)
-part("L1", ("Inductor_SMD", "L_Bourns_SRP7028A_7.3x6.6mm"), "22uH", "Bourns SRP7028A-220M", {"1": "BUCK_SW", "2": "+5V"}, (66.0, 60.0), 0)
+part("D3B", ("Diode_SMD", "D_SMB"), "SS36", "SS36B", {"1": "BUCK_SW", "2": "GND"}, (58.0, 64.0), 180)
+part("L1", ("Inductor_SMD", "L_Bourns_SRP7028A_7.3x6.6mm"), "22uH", "SMMS0630-220M", {"1": "BUCK_SW", "2": "+5V"}, (66.0, 60.0), 0)
 r("R1", "56k", "+5V", "BUCK_FB", (52.0, 56.0), 90)
 r("R2", "10k", "BUCK_FB", "GND", (52.0, 60.0), 90)
 c("C6", "22u", "+5V", "GND", (72.0, 56.0), 90, fp=C1206)
@@ -111,8 +111,8 @@ c("C12", "100n", "+3V3", "GND", (22.0, 27.0), 90)
 r("R5", "10k", "+3V3", "ESP_EN", (41.0, 22.0), 90)
 c("C13", "1u", "ESP_EN", "GND", (41.0, 26.0), 90)
 r("R6", "10k", "+3V3", "BOOT", (44.0, 22.0), 90)
-part("SW1", ("Button_Switch_SMD", "SW_SPST_TL3342"), "RESET", "TL3342", {"1": "ESP_EN", "2": "GND"}, (23.0, 44.0), 0)
-part("SW2", ("Button_Switch_SMD", "SW_SPST_TL3342"), "BOOT", "TL3342", {"1": "BOOT", "2": "GND"}, (31.0, 44.0), 0)
+part("SW1", ("Button_Switch_SMD", "SW_SPST_TL3342"), "RESET", "TS-1187A-B-A-B", {"1": "ESP_EN", "2": "GND"}, (23.0, 44.0), 0)
+part("SW2", ("Button_Switch_SMD", "SW_SPST_TL3342"), "BOOT", "TS-1187A-B-A-B", {"1": "BOOT", "2": "GND"}, (31.0, 44.0), 0)
 
 # ---------------------------------------------------------------- CAN1 (Captur BMS)
 part("U5", SOIC8, "TJA1051T/3", "TJA1051T/3/1J",
@@ -120,42 +120,47 @@ part("U5", SOIC8, "TJA1051T/3", "TJA1051T/3/1J",
      (21.0, 34.0), 0)
 c("C14", "100n", "+5V", "GND", (16.5, 31.0), 90)
 c("C15", "100n", "+3V3", "GND", (16.5, 37.0), 90)
-r("R7", "62", "CAN1H", "CAN1_TERM", (26.0, 30.5), 0)
-r("R8", "62", "CAN1_TERM_MID", "CAN1L", (26.0, 37.5), 0)
+r("R7", "56", "CAN1H", "CAN1_TERM", (26.0, 30.5), 0)
+r("R8", "56", "CAN1_TERM_MID", "CAN1L", (26.0, 37.5), 0)
 part("JP1", ("Jumper", "SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm"), "TERM", "solder jumper",
      {"1": "CAN1_TERM", "2": "CAN1_TERM_MID"}, (29.5, 34.0), 90)
 c("C16", "4.7n", "CAN1_TERM_MID", "GND", (26.0, 40.5), 0)
-part("D4", ("Package_TO_SOT_SMD", "SOT-23"), "PESD2CAN", "PESD2CAN,215", {"1": "CAN1L", "2": "CAN1H", "3": "GND"}, (14.0, 41.0), 0)
+part("D4", ("Package_TO_SOT_SMD", "SOT-23"), "H24VNT2B", "H24VNT2B", {"1": "CAN1L", "2": "CAN1H", "3": "GND"}, (14.0, 41.0), 0)
 
 # ---------------------------------------------------------------- CAN2 (IMA, listen only)
-part("U6", ("Package_SO", "SOIC-18W_7.5x11.6mm_P1.27mm"), "MCP2515", "MCP2515-I/SO",
-     {"1": "CAN2_TXD", "2": "CAN2_RXD", "3": "NC_CLKOUT", "4": "+3V3", "5": "+3V3", "6": "+3V3", "7": "OSC2",
-      "8": "OSC1", "9": "GND", "10": "NC_RX1BF", "11": "NC_RX0BF", "12": "CAN2_INT", "13": "SPI_SCK",
-      "14": "SPI_MOSI", "15": "SPI_MISO", "16": "SPI_CS", "17": "ESP_EN", "18": "+3V3"}, (42.0, 34.0), 0)
+MCP_FP = ("Package_SO", "SOIC-14_3.9x8.7mm_P1.27mm")
+
+
+def mcp2518(ref, txd, rxd, osc1, osc2, intr, cs, pos, nc):
+    """MCP2518FD SOIC-14: INT0/INT1 unused (firmware drives them as outputs), no reset pin (SPI RESET)."""
+    part(ref, MCP_FP, "MCP2518FD", "MCP2518FDT-E/SL",
+         {"1": txd, "2": rxd, "3": f"NC_CLKO{nc}", "4": intr, "5": osc2, "6": osc1, "7": "GND", "8": f"NC_INT1{nc}",
+          "9": f"NC_INT0{nc}", "10": "SPI_SCK", "11": "SPI_MOSI", "12": "SPI_MISO", "13": cs, "14": "+3V3"}, pos, 0)
+
+
+XTAL = ("Crystal_SMD_3225-4Pin_3.2x2.5mm", "40MHz", "40MHz 3225 15pF (YXC X322540MPB4SI)")
+mcp2518("U6", "CAN2_TXD", "CAN2_RXD", "OSC1", "OSC2", "CAN2_INT", "SPI_CS", (42.0, 34.0), "")
 c("C17", "100n", "+3V3", "GND", (48.0, 28.0), 0)
-part("Y1", ("Crystal", "Crystal_SMD_3225-4Pin_3.2x2.5mm"), "16MHz", "16MHz 3225 18pF",
+part("Y1", ("Crystal", XTAL[0]), XTAL[1], XTAL[2],
      {"1": "OSC1", "2": "GND", "3": "OSC2", "4": "GND"}, (50.0, 34.0), 90)
-c("C18", "18p", "OSC1", "GND", (53.0, 31.5), 0, mpn="18pF 0805 C0G")
-c("C19", "18p", "OSC2", "GND", (53.0, 36.5), 0, mpn="18pF 0805 C0G")
+c("C18", "22p", "OSC1", "GND", (53.0, 31.5), 0, mpn="22pF 0805 C0G")
+c("C19", "22p", "OSC2", "GND", (53.0, 36.5), 0, mpn="22pF 0805 C0G")
 part("U7", SOIC8, "TJA1051T/3", "TJA1051T/3/1J",
      {"1": "CAN2_TXD", "2": "GND", "3": "+5V", "4": "CAN2_RXD", "5": "+3V3", "6": "MCM_CANL", "7": "MCM_CANH", "8": "CAN2_S"},
      (32.0, 34.0), 0, "CAN2 = IMA bus, MCM side. S pulled high (silent) until JP2 closed")
 c("C20", "100n", "+5V", "GND", (36.0, 30.0), 90)
-part("D5", ("Package_TO_SOT_SMD", "SOT-23"), "PESD2CAN", "PESD2CAN,215", {"1": "MCM_CANL", "2": "MCM_CANH", "3": "GND"}, (14.0, 24.0), 0)
+part("D5", ("Package_TO_SOT_SMD", "SOT-23"), "H24VNT2B", "H24VNT2B", {"1": "MCM_CANL", "2": "MCM_CANH", "3": "GND"}, (14.0, 24.0), 0)
 r("R70", "10k", "+3V3", "CAN2_S", (30.0, 39.5), 0)
 part("JP2", ("Jumper", "SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm"), "CAN2 TX EN", "solder jumper",
      {"1": "CAN2_S", "2": "GND"}, (34.0, 39.5), 0)
 
 # ---------------------------------------------------------------- CAN3 (IMA, car/PCM side) + CAN4 (dash) + bypass relay
 def can_port(n, mcp, xcvr, xtal, x, canh, canl, cs, intr, term=True):
-    part(mcp, ("Package_SO", "SOIC-18W_7.5x11.6mm_P1.27mm"), "MCP2515", "MCP2515-I/SO",
-         {"1": f"CAN{n}_TXD", "2": f"CAN{n}_RXD", "3": f"NC_CLKOUT{n}", "4": "+3V3", "5": "+3V3", "6": "+3V3",
-          "7": f"OSC{n}_2", "8": f"OSC{n}_1", "9": "GND", "10": f"NC_RX1BF{n}", "11": f"NC_RX0BF{n}", "12": intr,
-          "13": "SPI_SCK", "14": "SPI_MOSI", "15": "SPI_MISO", "16": cs, "17": "ESP_EN", "18": "+3V3"}, (x, 89.0), 0)
-    part(xtal, ("Crystal", "Crystal_SMD_3225-4Pin_3.2x2.5mm"), "16MHz", "16MHz 3225 18pF",
+    mcp2518(mcp, f"CAN{n}_TXD", f"CAN{n}_RXD", f"OSC{n}_1", f"OSC{n}_2", intr, cs, (x, 89.0), n)
+    part(xtal, ("Crystal", XTAL[0]), XTAL[1], XTAL[2],
          {"1": f"OSC{n}_1", "2": "GND", "3": f"OSC{n}_2", "4": "GND"}, (x + 8.0, 85.5), 90)
-    c(f"C{60 + 4 * n}", "18p", f"OSC{n}_1", "GND", (x + 8.0, 82.0), 0, mpn="18pF 0805 C0G")
-    c(f"C{61 + 4 * n}", "18p", f"OSC{n}_2", "GND", (x + 8.0, 89.0), 0, mpn="18pF 0805 C0G")
+    c(f"C{60 + 4 * n}", "22p", f"OSC{n}_1", "GND", (x + 8.0, 82.0), 0, mpn="22pF 0805 C0G")
+    c(f"C{61 + 4 * n}", "22p", f"OSC{n}_2", "GND", (x + 8.0, 89.0), 0, mpn="22pF 0805 C0G")
     c(f"C{62 + 4 * n}", "100n", "+3V3", "GND", (x, 96.2), 0)
     part(xcvr, SOIC8, "TJA1051T/3", "TJA1051T/3/1J",
          {"1": f"CAN{n}_TXD", "2": "GND", "3": "+5V", "4": f"CAN{n}_RXD", "5": "+3V3", "6": canl, "7": canh, "8": f"CAN{n}_S"},
@@ -164,13 +169,13 @@ def can_port(n, mcp, xcvr, xtal, x, canh, canl, cs, intr, term=True):
     r(f"R{70 + n}", "10k", "+3V3", f"CAN{n}_S", (x + 14.5, 83.2), 0)
     part(f"JP{n + 3}", ("Jumper", "SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm"), f"CAN{n} TX EN", "solder jumper",
          {"1": f"CAN{n}_S", "2": "GND"}, (x + 18.5, 83.2), 90)
-    part(f"D{12 + n}", ("Package_TO_SOT_SMD", "SOT-23"), "PESD2CAN", "PESD2CAN,215", {"1": canl, "2": canh, "3": "GND"},
+    part(f"D{12 + n}", ("Package_TO_SOT_SMD", "SOT-23"), "H24VNT2B", "H24VNT2B", {"1": canl, "2": canh, "3": "GND"},
          (x + 20.5, 87.0), 90)
     if not term:
         return
     # split termination (open by default: the car bus already has its own terminations)
-    r(f"R{80 + 2 * n}", "62", canh, f"TERM{n}", (x + 19.5, 93.5), 90)
-    r(f"R{81 + 2 * n}", "62", f"TERM{n}_MID", canl, (x + 21.5, 93.5), 90)
+    r(f"R{80 + 2 * n}", "56", canh, f"TERM{n}", (x + 19.5, 93.5), 90)
+    r(f"R{81 + 2 * n}", "56", f"TERM{n}_MID", canl, (x + 21.5, 93.5), 90)
     part(f"JP{n + 10}", ("Jumper", "SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm"), f"TERM{n}", "solder jumper",
          {"1": f"TERM{n}", "2": f"TERM{n}_MID"}, (x + 23.5, 89.5), 90)
     c(f"C{90 + n}", "4.7n", f"TERM{n}_MID", "GND", (x + 23.5, 94.0), 90)
@@ -201,7 +206,7 @@ part("U22", ("Package_SO", "SOP-4_4.4x2.6mm_P1.27mm"), "AQY212GS", "Panasonic AQ
 r("R97", "470", "+5V", "TERM2_LED", (75.05, 66.5), 90)
 
 # ---------------------------------------------------------------- contactor drivers (sheet 2)
-part("F2", ("Fuse", "Fuse_2920_7451Metric"), "5A", "PTC/fuse 2920 5A 30V", {"1": "VCOIL_RAW", "2": "VCOIL"}, (20.0, 58.0), 0)
+part("F2", ("Fuse", "Fuse_2920_7451Metric"), "5A", "2920L500/30GR", {"1": "VCOIL_RAW", "2": "VCOIL"}, (20.0, 58.0), 0)
 vnd_note = "PLACEHOLDER: VND7050AJ is PowerSSO-16; HTSSOP-16 stand-in footprint and assumed pinout - verify"
 for ref, pos, out0, out1, in0, in1 in (("U8", (20.0, 70.0), "COIL_PRE", "COIL_MAINP", "HS_PRE_R", "HS_MAINP_R"),
                                        ("U9", (32.0, 70.0), "COIL_MAINN", "BMS12V", "HS_MAINN_R", "HS_BMS_R")):
@@ -215,7 +220,7 @@ for ref, a, b, pos in (("R10", "HS_PRE", "HS_PRE_R", (16.0, 64.0)), ("R11", "HS_
 c("C23", "100n", "VCOIL", "GND", (16.0, 76.0), 90)
 c("C24", "100n", "VCOIL", "GND", (28.0, 76.0), 90)
 c("C25", "10u 50V", "VCOIL", "GND", (26.0, 58.0), 90, fp=C1206)
-part("Q2", ("Package_TO_SOT_SMD", "TO-252-2"), "N-FET 60V logic", "PLACEHOLDER 60V logic-level N-FET DPAK",
+part("Q2", ("Package_TO_SOT_SMD", "TO-252-2"), "NCE6020AK", "NCE6020AK",
      {"1": "Q2_G", "2": "COIL_RTN", "3": "GND"}, (45.0, 70.0), 0)
 r("R16", "100", "AND_Y", "Q2_G", (40.0, 64.0), 90)
 r("R17", "100k", "Q2_G", "GND", (40.0, 76.0), 90)
@@ -231,11 +236,11 @@ r("R19", "10k", "+3V3", "WDT_OK", (44.0, 54.0), 0)
 c("C27", "100n", "WDT_CWD", "GND", (48.0, 58.0), 90, mpn="CWD cap - value per TPS3431 timing")
 c("C28", "100n", "+3V3", "GND", (48.0, 62.0), 90)
 # pump
-part("Q3", ("Package_TO_SOT_SMD", "TO-252-2"), "N-FET 60V logic", "PLACEHOLDER 60V logic-level N-FET DPAK",
+part("Q3", ("Package_TO_SOT_SMD", "TO-252-2"), "NCE6020AK", "NCE6020AK",
      {"1": "Q3_G", "2": "PUMP_N", "3": "GND"}, (55.0, 70.0), 0)
 r("R20", "100", "PUMP_PWM", "Q3_G", (51.0, 64.0), 90)
 r("R21", "100k", "Q3_G", "GND", (51.0, 76.0), 90)
-part("D6", ("Diode_SMD", "D_SMC"), "SS54", "SS54", {"1": "VCOIL", "2": "PUMP_N"}, (56.0, 77.0), 180)
+part("D6", ("Diode_SMD", "D_SMA"), "SS54", "SS54", {"1": "VCOIL", "2": "PUMP_N"}, (56.0, 77.0), 180)
 
 # ---------------------------------------------------------------- analog island (sheet 4)
 part("U13", SOIC8, "ISO1540", "ISO1540DR",
@@ -260,13 +265,13 @@ c("C33", "100n", "ISL5V", "ISLGND", (61.0, 5.5), 0)
 r("R36", "1k", "OUTA", "TBATT1", (72.0, 7.0), 0)
 r("R37", "1k", "OUTB", "TBATT2", (72.0, 10.0), 0)
 r("R38", "1k", "OUTC", "TBATT3", (72.0, 13.0), 0)
-r("R39", "10k", "ISOC_IN", "SUM_P", (60.0, 20.0), 0, mpn="10k 0805 0.1%")
-r("R40", "200k", "DAC_D", "SUM_P", (60.0, 23.0), 0, mpn="200k 0805 0.1%")
-r("R41", "200k", "VMID", "SUM_N", (66.0, 20.0), 0, mpn="200k 0805 0.1%")
-r("R42", "10k", "SUM_N", "OUTD", (66.0, 23.0), 0, mpn="10k 0805 0.1%")
+r("R39", "10k", "ISOC_IN", "SUM_P", (60.0, 20.0), 0)
+r("R40", "200k", "DAC_D", "SUM_P", (60.0, 23.0), 0)
+r("R41", "200k", "VMID", "SUM_N", (66.0, 20.0), 0)
+r("R42", "10k", "SUM_N", "OUTD", (66.0, 23.0), 0)
 r("R43", "100", "OUTD", "ISOC_OUT", (72.0, 17.0), 0)
-r("R44", "10k", "ISL5V", "VMID", (60.0, 27.0), 0, mpn="10k 0805 0.1%")
-r("R45", "10k", "VMID", "ISLGND", (66.0, 27.0), 0, mpn="10k 0805 0.1%")
+r("R44", "10k", "ISL5V", "VMID", (60.0, 27.0), 0)
+r("R45", "10k", "VMID", "ISLGND", (66.0, 27.0), 0)
 c("C34", "1u", "VMID", "ISLGND", (72.0, 27.0), 0)
 part("U16", ("Package_SO", "MSOP-10_3x3mm_P0.5mm"), "ADS1115", "ADS1115IDGSR",
      {"1": "ISLGND", "2": "NC_ALRT16", "3": "ISLGND", "4": "TBATT1", "5": "TBATT2", "6": "TBATT3", "7": "ISOC_OUT",
@@ -285,7 +290,7 @@ r("R47", "10k", "ISL5V_HALF", "ISLGND", (78.0, 28.5), 0)
 SLOTS = [(87.5, 14.5, 88.7, 21.5), (87.5, 25.8, 88.7, 39.6), (87.5, 41.6, 88.7, 50.4), (87.5, 53.6, 88.7, 62.4)]
 
 # ---------------------------------------------------------------- bridging parts (straddle the slot)
-part("U12", ("Package_SO", "SOIC-8_7.5x5.85mm_P1.27mm"), "AMC1311-Q1", "AMC1311QDWVRQ1",
+part("U12", ("Package_SO", "SOIC-8_7.5x5.85mm_P1.27mm"), "AMC1311", "AMC1311DWVR",
      {"1": "HV5V", "2": "SENSE_MID", "3": "BUS_N_F", "4": "BUS_N_F", "5": "GND", "6": "AMC_OUTN", "7": "AMC_OUTP", "8": "+5V"},
      (88.1, 18.0), 180, "DWV 7.5 mm body, 8.5 mm creepage")
 r("R50", "100", "AMC_OUTP", "AMC_P", (80.0, 34.0), 90)
@@ -305,10 +310,10 @@ r("R52", "270", "OPTO_EN", "K2_LED", (80.0, 46.0), 90)
 r("R53", "270", "OPTO_EN", "K3_LED", (80.0, 58.0), 90)
 
 # ---------------------------------------------------------------- HV strip (sheet 3)
-r("RF1", "1k 1W fusible", "BUS_P", "DIV_TOP_IN", (97.0, 8.0), 0, fp=R2512, mpn="PLACEHOLDER 1k 1W fusible flameproof 2512")
-r("RF2", "1k 1W fusible", "DIV_BOT_IN", "BUS_N", (97.0, 76.0), 0, fp=R2512, mpn="PLACEHOLDER 1k 1W fusible flameproof 2512")
-part("RF3", R2512, "1k 1W fusible", "PLACEHOLDER 1k 1W fusible flameproof 2512", {"1": "BUS_P", "2": "BUS_P_F"}, (110.0, 14.0), 90)
-part("RF4", R2512, "1k 1W fusible", "PLACEHOLDER 1k 1W fusible flameproof 2512", {"1": "BUS_N", "2": "BUS_N_F"}, (114.0, 14.0), 90)
+r("RF1", "1k 1W fusible", "BUS_P", "DIV_TOP_IN", (97.0, 8.0), 0, fp=R2512, mpn="25121WF1001T4E 1k 1W 2512 (fusible preferred if sourced)")
+r("RF2", "1k 1W fusible", "DIV_BOT_IN", "BUS_N", (97.0, 76.0), 0, fp=R2512, mpn="25121WF1001T4E 1k 1W 2512 (fusible preferred if sourced)")
+part("RF3", R2512, "1k 1W fusible", "25121WF1001T4E 1k 1W 2512 (fusible preferred if sourced)", {"1": "BUS_P", "2": "BUS_P_F"}, (110.0, 14.0), 90)
+part("RF4", R2512, "1k 1W fusible", "25121WF1001T4E 1k 1W 2512 (fusible preferred if sourced)", {"1": "BUS_N", "2": "BUS_N_F"}, (114.0, 14.0), 90)
 nodes = ["DIV_TOP", "TAP7", "TAP6", "TAP5", "TAP4", "TAP3", "TAP2", "TAP1", "DIV_BOT"]
 for i in range(8):
     y = 17.0 + i * 7.0
@@ -321,8 +326,8 @@ for i, nd in enumerate(nodes):
 for i in range(4):
     a = "BUS_P_F" if i == 0 else f"SNS{i}"
     b = "SENSE_MID" if i == 3 else f"SNS{i+1}"
-    r(f"RS{i+1}", "249k", a, b, (112.0, 22.0 + i * 4.0), 90, fp=R1206, mpn="249k 1206 0.1%")
-r("RS5", "13.3k", "SENSE_MID", "BUS_N_F", (112.0, 40.0), 90, fp=R1206, mpn="13.3k 1206 0.1% (0-152 V full scale)")
+    r(f"RS{i+1}", "100k", a, b, (112.0, 22.0 + i * 4.0), 90, fp=R1206)
+r("RS5", "4.7k", "SENSE_MID", "BUS_N_F", (112.0, 40.0), 90, fp=R1206)
 c("C41", "1n", "SENSE_MID", "BUS_N_F", (115.0, 40.0), 90)
 
 for i, (x, y) in enumerate(((52.0, 50.0), (116.5, 3.5), (3.5, 94.5), (116.5, 94.5))):
@@ -514,7 +519,7 @@ def build(path):
         t.SetTextThickness(pcbnew.FromMM(size * 0.15))
         board.Add(t)
     silk("HV <=150V DANGER", 104.0, 96.0, 1.5)
-    silk("ZE2 LiB MCM SPOOF v0.4", 96.0, 91.5, 1.0)
+    silk("ZE2 LiB MCM SPOOF v0.5", 96.0, 91.5, 1.0)
     silk("ANALOG ISLAND", 66.0, 2.0, 1.0)
     rect(90.5, 1.0, 119.0, 97.0, layer=pcbnew.F_SilkS, width=0.25)
 

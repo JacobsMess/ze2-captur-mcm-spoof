@@ -1,4 +1,4 @@
-// IMA bus man-in-the-middle. BYPASS: K4 relaxed, the IMA bus is one piece and both MCP2515s just listen.
+// IMA bus man-in-the-middle. BYPASS: K4 relaxed, the IMA bus is one piece and both CAN controllers just listen.
 // SPLIT: K4 energised, CAN2 (MCM side) and CAN3 (PCM side) are separate buses and every frame is forwarded
 // to the other side, through the rewrite hooks. Falls back to BYPASS (latched until key-off) if either half
 // goes quiet while split.

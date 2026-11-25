@@ -1,5 +1,5 @@
-// Simulation HAL: the real MCP2515 driver talks to register-level models through this SPI shim, which also
-// burns the time a real 10 MHz SPI transaction takes, so SPI cost lands on the CAN task as it would on the
+// Simulation HAL: the real MCP2518FD driver talks to register-level models through this SPI shim, which also
+// burns the time a real 16 MHz SPI transaction takes, so SPI cost lands on the CAN task as it would on the
 // board. I2C writes block (without CPU) for their bus time, like the interrupt-driven I2C driver does.
 #include "sdkconfig.h"
 #if CONFIG_ZE2_SIM
@@ -11,9 +11,9 @@
 #include "sim.h"
 
 // per transaction: ESP-IDF's SPI master docs give 9 us for a one-byte polling transaction via CPU on the
-// ESP32-S3 (setup + FIFO + transfer); taken here as 8 us fixed + 0.8 us per byte at 10 MHz
+// ESP32-S3 (setup + FIFO + transfer); taken here as 8 us fixed + 0.5 us per byte at 16 MHz
 #define SPI_OVERHEAD_US 8
-#define SPI_NS_PER_BYTE 800
+#define SPI_NS_PER_BYTE 500
 
 static bool s_out[OUT_COUNT];
 static int64_t s_bus_t;

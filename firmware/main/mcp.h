@@ -1,3 +1,4 @@
+// CAN controller driver API (MCP2518FD on SPI; one instance per chip select).
 #pragma once
 #include <stdbool.h>
 #include "can_types.h"
@@ -13,7 +14,7 @@ bool mcp_set_listen_only(int chip, bool listen_only);   // CAN task only (touche
 // any task: ask the CAN task to change mode on its next pass
 void mcp_request_listen_only(int chip, bool listen_only);
 void mcp_apply_pending(int chip);                          // CAN task
-// service one chip once (one READ STATUS round): read RX buffers, release finished TX buffers, clear errors.
+// service one chip once: drain up to a batch of frames from its receive FIFO and clear overflow flags.
 // Calls cb for every received frame. Returns number of frames received.
 int mcp_service(int chip, mcp_rx_cb_t cb);
 // queue a frame for transmit (any task); actual loading happens in mcp_tx_pump() on the CAN task

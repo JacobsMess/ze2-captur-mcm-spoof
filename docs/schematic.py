@@ -42,7 +42,7 @@ def sheet1(path):
         d += elm.Zener().at(n1.center).down().reverse()
         d += elm.Ground()
         d.pop()
-        note(d, (n1.center[0] + 0.3, -1.0), "D1 SMCJ33A")
+        note(d, (n1.center[0] + 0.3, -1.0), "D1 SMCJ33CA")
         buck = ic(d, (b1.center[0] + 1.0, -1.0), 2.6, 2.0, "U2 LMR16006Y-Q1\nbuck 5V (+D3B SS36)", left=("VIN",), right=("VOUT",), bottom=("GND",))
         wire(d, b1.center, buck.VIN)
         d += elm.Ground().at(buck.GND)
@@ -65,11 +65,11 @@ def sheet1(path):
         d += elm.Line().at(t1.CANL).left(1.4).label("J2 CAN1_L", "left")
         d += elm.Line().at(t1.S).down(0.5)
         d += elm.Ground()
-        note(d, (-2.6, -10.2), "PESD2CAN ESD, 2x60R split\ntermination via JP1")
+        note(d, (-2.6, -10.2), "H24VNT2B ESD, 2x56R split\ntermination via JP1")
 
         t2 = ic(d, (1.5, -15.5), 2.8, 2.2, "U7 TJA1051T/3\nCAN2 -> IMA CAN",
                 left=("CANH", "CANL"), right=("TXD", "RXD"), bottom=("S",))
-        mcp = ic(d, (5.6, -15.5), 2.4, 2.2, "U6 MCP2515\nlisten-only",
+        mcp = ic(d, (5.6, -15.5), 2.4, 2.2, "U6 MCP2518FD\nlisten-only",
                  left=("TXCAN", "RXCAN"), right=("SPI",))
         wire(d, t2.TXD, mcp.TXCAN, "-")
         wire(d, t2.RXD, mcp.RXCAN, "-")
@@ -190,13 +190,13 @@ def sheet3(path):
 
         d += elm.Dot(open=True).at((12, 0)).label("BUS+", "left")
         d += elm.Resistor().down(2.0)
-        note(d, (12.4, -0.4), "4x 250k (1M)", 8)
+        note(d, (12.4, -0.4), "4x 100k", 8)
         d += (m := elm.Dot())
         d += elm.Resistor().down(2.0)
-        note(d, (12.4, -2.6), "13.3k", 8)
+        note(d, (12.4, -2.6), "4.7k", 8)
         d += elm.Dot(open=True).label("BUS-", "left")
         amc = ic(d, (14.0, -3.0), 4.4, 2.0, "", left=("VIN",), right=("VOUT",), top=("VDD1", "VDD2"))
-        note(d, (14.0, -3.4), "U12 AMC1311-Q1\nreinforced isolated amp", 9)
+        note(d, (14.0, -3.4), "U12 AMC1311\nreinforced isolated amp", 9)
         wire(d, m.center, amc.VIN, "-|")
         d += elm.Line().at(amc.VOUT).right(1.2).label("to MCU ADC (LV)", "right", fontsize=8)
         d += elm.Line().at(amc.VDD1).up(1.4)
@@ -204,7 +204,7 @@ def sheet3(path):
         d += elm.Line().at(amc.VDD2).up(1.4)
         note(d, (amc.VDD2[0] + 0.2, amc.VDD2[1] + 2.4), "+5V (LV side)", 8)
         note(d, (12, -8.5),
-             "Bus 0-152V -> 0-2.0V. Uses: precharge complete (>=95% of BMS sum),\n"
+             "Bus 0-172V -> 0-2.0V (1% parts, ratio trimmed in firmware). Uses: precharge complete (>=95% of BMS sum),\n"
              "weld check (<20V 500ms after open), BMS sum cross-check (5%).\n\n"
              "8 segments fitted (9 taps). 7-segment car: link VHB8 to VHB7, J4 pin 9 unused.\n"
              "Opto LEDs from 3V3 via 330R, switched by OPTO_EN: MCU dead = divider floats\n"
@@ -288,7 +288,7 @@ def sheet5(path):
         for k, (n, mcp, xc, canh, canl, cs, intr) in enumerate((("3", "U18", "U19", "IMA_CANH", "IMA_CANL", "SPI_CS3", "CAN3_INT"),
                                                                  ("4", "U20", "U21", "DASH_CANH", "DASH_CANL", "SPI_CS4", "CAN4_INT"))):
             y = -k * 7.0
-            m = ic(d, (5, y - 2.5), 4.2, 2.6, f"{mcp} MCP2515 + 16 MHz", left=("SPI", "CS/INT"), right=("TXCAN", "RXCAN"))
+            m = ic(d, (5, y - 2.5), 4.2, 2.6, f"{mcp} MCP2518FD + 40 MHz", left=("SPI", "CS/INT"), right=("TXCAN", "RXCAN"))
             d += elm.Line().at(m.SPI).left(1.2).label("SPI bus", "left")
             d += elm.Line().at(m["CS/INT"]).left(1.2).label(f"{cs} / {intr}", "left")
             t = ic(d, (11.5, y - 2.5), 2.8, 2.6, f"{xc} TJA1051T/3", left=("TXD", "RXD"), right=("CANH", "CANL"), bottom=("S",))
@@ -297,7 +297,7 @@ def sheet5(path):
             d += elm.Line().at(t.CANL).right(2.0).label(canl, "right")
             d += elm.Line().at(t.S).down(0.6)
             d += elm.Dot().label(f"CAN{n}_S: 10k to 3V3 (silent), JP to GND = TX", "bottom", fontsize=8)
-        note(d, (19.5, 0.8), "Per port: PESD2CAN ESD.\nCAN4 (dash tap): 2x62R + 4.7n split termination via JP14,\ndefault open; close only if the board replaces a bus-end node.\nCAN3: no fixed termination - switched by K4 below.")
+        note(d, (19.5, 0.8), "Per port: H24VNT2B ESD.\nCAN4 (dash tap): 2x56R + 4.7n split termination via JP14,\ndefault open; close only if the board replaces a bus-end node.\nCAN3: no fixed termination - switched by K4 below.")
         k4 = ic(d, (6, -16.5), 6.5, 3.6, "K4 Omron G6K-2F-Y 5V (DPDT)", left=("COM1", "COM2", "COIL+"), right=("NC1", "NC2", "NO1", "NO2", "COIL-"), lab_loc="bottom")
         d += elm.Line().at(k4.COM1).left(1.5).label("IMA_CANH (car / PCM side)", "left")
         d += elm.Line().at(k4.COM2).left(1.5).label("IMA_CANL", "left")
@@ -324,9 +324,11 @@ def sheet5(path):
 
 
 if __name__ == "__main__":
-    sheet5("sheet5_can_mitm.png")
-    sheet1("sheet1_power_mcu_can.png")
-    sheet2("sheet2_drivers.png")
-    sheet3("sheet3_hv_divider.png")
-    sheet4("sheet4_analog_island.png")
+    import pathlib
+    img = pathlib.Path(__file__).resolve().parent / "img"
+    sheet5(str(img / "sheet5_can_mitm.png"))
+    sheet1(str(img / "sheet1_power_mcu_can.png"))
+    sheet2(str(img / "sheet2_drivers.png"))
+    sheet3(str(img / "sheet3_hv_divider.png"))
+    sheet4(str(img / "sheet4_analog_island.png"))
     print("ok")

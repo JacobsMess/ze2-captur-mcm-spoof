@@ -25,6 +25,7 @@ SUBST = {
     "Fuse.3dshapes/Fuse_1812_4532Metric.wrl": ("Capacitor_SMD.3dshapes/C_1812_4532Metric.wrl", None, None),
     "Fuse.3dshapes/Fuse_2920_7451Metric.wrl": ("Capacitor_SMD.3dshapes/C_2816_7142Metric.wrl", "body", None),
     "Inductor_SMD.3dshapes/L_Bourns_SRP7028A_7.3x6.6mm.wrl": ("Inductor_SMD.3dshapes/L_Bourns_SRN6045TA.wrl", "body", 2.8),
+    "Diode_SMD.3dshapes/D_SMA.wrl": ("Diode_SMD.3dshapes/D_SMB.wrl", "body", None),
     "Package_SON.3dshapes/VSON-8-1EP_3x3mm_P0.65mm_EP1.65x2.4mm.wrl": ("Package_SON.3dshapes/WSON-8-1EP_3x3mm_P0.5mm_EP1.6x2.0mm.wrl", None, None),
 }
 BLACK, NYLON, METAL, TAN, DGREY = (0.09, 0.09, 0.10), (0.92, 0.89, 0.80), (0.78, 0.78, 0.80), (0.80, 0.68, 0.45), (0.22, 0.22, 0.24)

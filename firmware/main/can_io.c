@@ -10,7 +10,7 @@
 #include "freertos/task.h"
 #include "gateway.h"
 #include "hal.h"
-#include "mcp2515.h"
+#include "mcp.h"
 #include "stats.h"
 
 static const char *TAG = "can_io";
@@ -109,7 +109,7 @@ void can_io_start(void)
     s_ready[1] = mcp_init(1, true);
     s_ready[2] = mcp_init(2, true);
     for (int c = 0; c < MCP_COUNT; c++) {
-        if (!s_ready[c]) ESP_LOGE(TAG, "MCP2515 #%d init failed", c);
+        if (!s_ready[c]) ESP_LOGE(TAG, "MCP2518FD #%d init failed", c);
     }
     xTaskCreatePinnedToCore(can_task, "can_io", 4096, NULL, configMAX_PRIORITIES - 2, &s_task, 1);
     hal_set_can_task(s_task);

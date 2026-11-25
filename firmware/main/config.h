@@ -21,17 +21,17 @@
 #define PIN_HS_MAINN     17  // pin 10 VND7050 main - contactor
 #define PIN_I2C_SCL      18  // pin 11 to the analog island through ISO1540
 #define PIN_I2C_SDA      8   // pin 12
-#define PIN_CAN3_INT     3   // pin 15 MCP2515 U18 (PCM side of the IMA bus)
+#define PIN_CAN3_INT     3   // pin 15 MCP2518FD U18 (PCM side of the IMA bus)
 #define PIN_SPI_CS3      9   // pin 17
 #define PIN_IG_SENSE     10  // pin 18 ignition sense (high = key on)
 #define PIN_SPI_MOSI     11  // pin 19
 #define PIN_SPI_SCK      12  // pin 20
 #define PIN_SPI_MISO     13  // pin 21
-#define PIN_CAN4_INT     14  // pin 22 MCP2515 U20 (dash bus tap)
+#define PIN_CAN4_INT     14  // pin 22 MCP2518FD U20 (dash bus tap)
 #define PIN_HS_BMS       21  // pin 23 Captur BMS 12 V feed
 #define PIN_PUMP_PWM     47  // pin 24 coolant pump
 #define PIN_SPI_CS4      48  // pin 25
-#define PIN_CAN2_INT     38  // pin 31 MCP2515 U6 (MCM side of the IMA bus)
+#define PIN_CAN2_INT     38  // pin 31 MCP2518FD U6 (MCM side of the IMA bus)
 #define PIN_SPI_CS2      39  // pin 32
 #define PIN_OPTO_EN      41  // pin 34 tap-divider optoMOS K2/K3
 #define PIN_RELAY_SPLIT  42  // pin 35 K4 bypass relay + U22 photoMOS (energised = IMA bus split)
@@ -41,8 +41,9 @@
 // ---------------------------------------------------------------- buses
 typedef enum { BUS_EV = 0, BUS_MCM = 1, BUS_PCM = 2, BUS_DASH = 3, BUS_COUNT = 4 } bus_id_t;
 #define CAN_BITRATE        500000
-#define MCP_SPI_HZ         10000000   // MCP2515 maximum
-#define MCP_OSC_HZ         16000000
+#define MCP_SPI_HZ         16000000   // MCP2518FD: <= 0.85 x SYSCLK/2 = 17 MHz; 80 MHz / 5 on the S3
+#define HV_DIV_X1000       86106      // (400k + 4.7k) / 4.7k; calibrate per board
+#define MCP_OSC_HZ         40000000   // SYSCLK = crystal, PLL off
 
 // ---------------------------------------------------------------- analog island (I2C)
 #define I2C_HZ             400000

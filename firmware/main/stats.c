@@ -3,7 +3,7 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "mcp2515.h"
+#include "mcp.h"
 
 ze2_stats_t g_stats;
 

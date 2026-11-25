@@ -228,7 +228,7 @@
    "Fuse_1812_4532Metric"
   ],
   "val": "2A PTC",
-  "mpn": "PTC 1812 2A 30V",
+  "mpn": "BSMD1812-200-30V",
   "nets": {
    "1": "VIG_RAW",
    "2": "VIG_F"
@@ -285,8 +285,8 @@
    "Package_TO_SOT_SMD",
    "TO-252-2"
   ],
-  "val": "N-FET 40V",
-  "mpn": "PLACEHOLDER 40V N-FET DPAK (e.g. auto-grade 40V 5mOhm)",
+  "val": "NCE6020AK",
+  "mpn": "NCE6020AK",
   "nets": {
    "1": "LM_GATE",
    "2": "VBAT_P",
@@ -304,8 +304,8 @@
    "Diode_SMD",
    "D_SMC"
   ],
-  "val": "SMCJ33A",
-  "mpn": "SMCJ33A",
+  "val": "SMCJ33CA",
+  "mpn": "SMCJ33CA",
   "nets": {
    "1": "VBAT_P",
    "2": "GND"
@@ -417,7 +417,7 @@
    "D_SMB"
   ],
   "val": "SS36",
-  "mpn": "SS36 60V 3A Schottky",
+  "mpn": "SS36B",
   "nets": {
    "1": "BUCK_SW",
    "2": "GND"
@@ -435,7 +435,7 @@
    "L_Bourns_SRP7028A_7.3x6.6mm"
   ],
   "val": "22uH",
-  "mpn": "Bourns SRP7028A-220M",
+  "mpn": "SMMS0630-220M",
   "nets": {
    "1": "BUCK_SW",
    "2": "+5V"
@@ -783,7 +783,7 @@
    "SW_SPST_TL3342"
   ],
   "val": "RESET",
-  "mpn": "TL3342",
+  "mpn": "TS-1187A-B-A-B",
   "nets": {
    "1": "ESP_EN",
    "2": "GND"
@@ -801,7 +801,7 @@
    "SW_SPST_TL3342"
   ],
   "val": "BOOT",
-  "mpn": "TL3342",
+  "mpn": "TS-1187A-B-A-B",
   "nets": {
    "1": "BOOT",
    "2": "GND"
@@ -878,8 +878,8 @@
    "Resistor_SMD",
    "R_0805_2012Metric"
   ],
-  "val": "62",
-  "mpn": "62 0805 1%",
+  "val": "56",
+  "mpn": "56 0805 1%",
   "nets": {
    "1": "CAN1H",
    "2": "CAN1_TERM"
@@ -896,8 +896,8 @@
    "Resistor_SMD",
    "R_0805_2012Metric"
   ],
-  "val": "62",
-  "mpn": "62 0805 1%",
+  "val": "56",
+  "mpn": "56 0805 1%",
   "nets": {
    "1": "CAN1_TERM_MID",
    "2": "CAN1L"
@@ -950,8 +950,8 @@
    "Package_TO_SOT_SMD",
    "SOT-23"
   ],
-  "val": "PESD2CAN",
-  "mpn": "PESD2CAN,215",
+  "val": "H24VNT2B",
+  "mpn": "H24VNT2B",
   "nets": {
    "1": "CAN1L",
    "2": "CAN1H",
@@ -967,29 +967,25 @@
  "U6": {
   "fp": [
    "Package_SO",
-   "SOIC-18W_7.5x11.6mm_P1.27mm"
+   "SOIC-14_3.9x8.7mm_P1.27mm"
   ],
-  "val": "MCP2515",
-  "mpn": "MCP2515-I/SO",
+  "val": "MCP2518FD",
+  "mpn": "MCP2518FDT-E/SL",
   "nets": {
    "1": "CAN2_TXD",
    "2": "CAN2_RXD",
-   "3": "NC_CLKOUT",
-   "4": "+3V3",
-   "5": "+3V3",
-   "6": "+3V3",
-   "7": "OSC2",
-   "8": "OSC1",
-   "9": "GND",
-   "10": "NC_RX1BF",
-   "11": "NC_RX0BF",
-   "12": "CAN2_INT",
-   "13": "SPI_SCK",
-   "14": "SPI_MOSI",
-   "15": "SPI_MISO",
-   "16": "SPI_CS",
-   "17": "ESP_EN",
-   "18": "+3V3"
+   "3": "NC_CLKO",
+   "4": "CAN2_INT",
+   "5": "OSC2",
+   "6": "OSC1",
+   "7": "GND",
+   "8": "NC_INT1",
+   "9": "NC_INT0",
+   "10": "SPI_SCK",
+   "11": "SPI_MOSI",
+   "12": "SPI_MISO",
+   "13": "SPI_CS",
+   "14": "+3V3"
   },
   "pos": [
    44.0,
@@ -1021,8 +1017,8 @@
    "Crystal",
    "Crystal_SMD_3225-4Pin_3.2x2.5mm"
   ],
-  "val": "16MHz",
-  "mpn": "16MHz 3225 18pF",
+  "val": "40MHz",
+  "mpn": "40MHz 3225 15pF (YXC X322540MPB4SI)",
   "nets": {
    "1": "OSC1",
    "2": "GND",
@@ -1041,8 +1037,8 @@
    "Capacitor_SMD",
    "C_0805_2012Metric"
   ],
-  "val": "18p",
-  "mpn": "18pF 0805 C0G",
+  "val": "22p",
+  "mpn": "22pF 0805 C0G",
   "nets": {
    "1": "OSC1",
    "2": "GND"
@@ -1059,8 +1055,8 @@
    "Capacitor_SMD",
    "C_0805_2012Metric"
   ],
-  "val": "18p",
-  "mpn": "18pF 0805 C0G",
+  "val": "22p",
+  "mpn": "22pF 0805 C0G",
   "nets": {
    "1": "OSC2",
    "2": "GND"
@@ -1119,8 +1115,8 @@
    "Package_TO_SOT_SMD",
    "SOT-23"
   ],
-  "val": "PESD2CAN",
-  "mpn": "PESD2CAN,215",
+  "val": "H24VNT2B",
+  "mpn": "H24VNT2B",
   "nets": {
    "1": "MCM_CANL",
    "2": "MCM_CANH",
@@ -1172,29 +1168,25 @@
  "U18": {
   "fp": [
    "Package_SO",
-   "SOIC-18W_7.5x11.6mm_P1.27mm"
+   "SOIC-14_3.9x8.7mm_P1.27mm"
   ],
-  "val": "MCP2515",
-  "mpn": "MCP2515-I/SO",
+  "val": "MCP2518FD",
+  "mpn": "MCP2518FDT-E/SL",
   "nets": {
    "1": "CAN3_TXD",
    "2": "CAN3_RXD",
-   "3": "NC_CLKOUT3",
-   "4": "+3V3",
-   "5": "+3V3",
-   "6": "+3V3",
-   "7": "OSC3_2",
-   "8": "OSC3_1",
-   "9": "GND",
-   "10": "NC_RX1BF3",
-   "11": "NC_RX0BF3",
-   "12": "CAN3_INT",
-   "13": "SPI_SCK",
-   "14": "SPI_MOSI",
-   "15": "SPI_MISO",
-   "16": "SPI_CS3",
-   "17": "ESP_EN",
-   "18": "+3V3"
+   "3": "NC_CLKO3",
+   "4": "CAN3_INT",
+   "5": "OSC3_2",
+   "6": "OSC3_1",
+   "7": "GND",
+   "8": "NC_INT13",
+   "9": "NC_INT03",
+   "10": "SPI_SCK",
+   "11": "SPI_MOSI",
+   "12": "SPI_MISO",
+   "13": "SPI_CS3",
+   "14": "+3V3"
   },
   "pos": [
    14.0,
@@ -1208,8 +1200,8 @@
    "Crystal",
    "Crystal_SMD_3225-4Pin_3.2x2.5mm"
   ],
-  "val": "16MHz",
-  "mpn": "16MHz 3225 18pF",
+  "val": "40MHz",
+  "mpn": "40MHz 3225 15pF (YXC X322540MPB4SI)",
   "nets": {
    "1": "OSC3_1",
    "2": "GND",
@@ -1228,8 +1220,8 @@
    "Capacitor_SMD",
    "C_0805_2012Metric"
   ],
-  "val": "18p",
-  "mpn": "18pF 0805 C0G",
+  "val": "22p",
+  "mpn": "22pF 0805 C0G",
   "nets": {
    "1": "OSC3_1",
    "2": "GND"
@@ -1246,8 +1238,8 @@
    "Capacitor_SMD",
    "C_0805_2012Metric"
   ],
-  "val": "18p",
-  "mpn": "18pF 0805 C0G",
+  "val": "22p",
+  "mpn": "22pF 0805 C0G",
   "nets": {
    "1": "OSC3_2",
    "2": "GND"
@@ -1360,8 +1352,8 @@
    "Package_TO_SOT_SMD",
    "SOT-23"
   ],
-  "val": "PESD2CAN",
-  "mpn": "PESD2CAN,215",
+  "val": "H24VNT2B",
+  "mpn": "H24VNT2B",
   "nets": {
    "1": "IMA_CANL",
    "2": "IMA_CANH",
@@ -1377,29 +1369,25 @@
  "U20": {
   "fp": [
    "Package_SO",
-   "SOIC-18W_7.5x11.6mm_P1.27mm"
+   "SOIC-14_3.9x8.7mm_P1.27mm"
   ],
-  "val": "MCP2515",
-  "mpn": "MCP2515-I/SO",
+  "val": "MCP2518FD",
+  "mpn": "MCP2518FDT-E/SL",
   "nets": {
    "1": "CAN4_TXD",
    "2": "CAN4_RXD",
-   "3": "NC_CLKOUT4",
-   "4": "+3V3",
-   "5": "+3V3",
-   "6": "+3V3",
-   "7": "OSC4_2",
-   "8": "OSC4_1",
-   "9": "GND",
-   "10": "NC_RX1BF4",
-   "11": "NC_RX0BF4",
-   "12": "CAN4_INT",
-   "13": "SPI_SCK",
-   "14": "SPI_MOSI",
-   "15": "SPI_MISO",
-   "16": "SPI_CS4",
-   "17": "ESP_EN",
-   "18": "+3V3"
+   "3": "NC_CLKO4",
+   "4": "CAN4_INT",
+   "5": "OSC4_2",
+   "6": "OSC4_1",
+   "7": "GND",
+   "8": "NC_INT14",
+   "9": "NC_INT04",
+   "10": "SPI_SCK",
+   "11": "SPI_MOSI",
+   "12": "SPI_MISO",
+   "13": "SPI_CS4",
+   "14": "+3V3"
   },
   "pos": [
    45.0,
@@ -1413,8 +1401,8 @@
    "Crystal",
    "Crystal_SMD_3225-4Pin_3.2x2.5mm"
   ],
-  "val": "16MHz",
-  "mpn": "16MHz 3225 18pF",
+  "val": "40MHz",
+  "mpn": "40MHz 3225 15pF (YXC X322540MPB4SI)",
   "nets": {
    "1": "OSC4_1",
    "2": "GND",
@@ -1433,8 +1421,8 @@
    "Capacitor_SMD",
    "C_0805_2012Metric"
   ],
-  "val": "18p",
-  "mpn": "18pF 0805 C0G",
+  "val": "22p",
+  "mpn": "22pF 0805 C0G",
   "nets": {
    "1": "OSC4_1",
    "2": "GND"
@@ -1451,8 +1439,8 @@
    "Capacitor_SMD",
    "C_0805_2012Metric"
   ],
-  "val": "18p",
-  "mpn": "18pF 0805 C0G",
+  "val": "22p",
+  "mpn": "22pF 0805 C0G",
   "nets": {
    "1": "OSC4_2",
    "2": "GND"
@@ -1565,8 +1553,8 @@
    "Package_TO_SOT_SMD",
    "SOT-23"
   ],
-  "val": "PESD2CAN",
-  "mpn": "PESD2CAN,215",
+  "val": "H24VNT2B",
+  "mpn": "H24VNT2B",
   "nets": {
    "1": "DASH_CANL",
    "2": "DASH_CANH",
@@ -1584,8 +1572,8 @@
    "Resistor_SMD",
    "R_0805_2012Metric"
   ],
-  "val": "62",
-  "mpn": "62 0805 1%",
+  "val": "56",
+  "mpn": "56 0805 1%",
   "nets": {
    "1": "DASH_CANH",
    "2": "TERM4"
@@ -1602,8 +1590,8 @@
    "Resistor_SMD",
    "R_0805_2012Metric"
   ],
-  "val": "62",
-  "mpn": "62 0805 1%",
+  "val": "56",
+  "mpn": "56 0805 1%",
   "nets": {
    "1": "TERM4_MID",
    "2": "DASH_CANL"
@@ -1864,7 +1852,7 @@
    "Fuse_2920_7451Metric"
   ],
   "val": "5A",
-  "mpn": "PTC/fuse 2920 5A 30V",
+  "mpn": "2920L500/30GR",
   "nets": {
    "1": "VCOIL_RAW",
    "2": "VCOIL"
@@ -2073,8 +2061,8 @@
    "Package_TO_SOT_SMD",
    "TO-252-2"
   ],
-  "val": "N-FET 60V logic",
-  "mpn": "PLACEHOLDER 60V logic-level N-FET DPAK",
+  "val": "NCE6020AK",
+  "mpn": "NCE6020AK",
   "nets": {
    "1": "Q2_G",
    "2": "COIL_RTN",
@@ -2282,8 +2270,8 @@
    "Package_TO_SOT_SMD",
    "TO-252-2"
   ],
-  "val": "N-FET 60V logic",
-  "mpn": "PLACEHOLDER 60V logic-level N-FET DPAK",
+  "val": "NCE6020AK",
+  "mpn": "NCE6020AK",
   "nets": {
    "1": "Q3_G",
    "2": "PUMP_N",
@@ -2335,7 +2323,7 @@
  "D6": {
   "fp": [
    "Diode_SMD",
-   "D_SMC"
+   "D_SMA"
   ],
   "val": "SS54",
   "mpn": "SS54",
@@ -2670,7 +2658,7 @@
    "R_0805_2012Metric"
   ],
   "val": "10k",
-  "mpn": "10k 0805 0.1%",
+  "mpn": "10k 0805 1%",
   "nets": {
    "1": "ISOC_IN",
    "2": "SUM_P"
@@ -2688,7 +2676,7 @@
    "R_0805_2012Metric"
   ],
   "val": "200k",
-  "mpn": "200k 0805 0.1%",
+  "mpn": "200k 0805 1%",
   "nets": {
    "1": "DAC_D",
    "2": "SUM_P"
@@ -2706,7 +2694,7 @@
    "R_0805_2012Metric"
   ],
   "val": "200k",
-  "mpn": "200k 0805 0.1%",
+  "mpn": "200k 0805 1%",
   "nets": {
    "1": "VMID",
    "2": "SUM_N"
@@ -2724,7 +2712,7 @@
    "R_0805_2012Metric"
   ],
   "val": "10k",
-  "mpn": "10k 0805 0.1%",
+  "mpn": "10k 0805 1%",
   "nets": {
    "1": "SUM_N",
    "2": "OUTD"
@@ -2760,7 +2748,7 @@
    "R_0805_2012Metric"
   ],
   "val": "10k",
-  "mpn": "10k 0805 0.1%",
+  "mpn": "10k 0805 1%",
   "nets": {
    "1": "ISL5V",
    "2": "VMID"
@@ -2778,7 +2766,7 @@
    "R_0805_2012Metric"
   ],
   "val": "10k",
-  "mpn": "10k 0805 0.1%",
+  "mpn": "10k 0805 1%",
   "nets": {
    "1": "VMID",
    "2": "ISLGND"
@@ -2937,8 +2925,8 @@
    "Package_SO",
    "SOIC-8_7.5x5.85mm_P1.27mm"
   ],
-  "val": "AMC1311-Q1",
-  "mpn": "AMC1311QDWVRQ1",
+  "val": "AMC1311",
+  "mpn": "AMC1311DWVR",
   "nets": {
    "1": "HV5V",
    "2": "SENSE_MID",
@@ -3171,7 +3159,7 @@
    "R_2512_6332Metric"
   ],
   "val": "1k 1W fusible",
-  "mpn": "PLACEHOLDER 1k 1W fusible flameproof 2512",
+  "mpn": "25121WF1001T4E 1k 1W 2512 (fusible preferred if sourced)",
   "nets": {
    "1": "BUS_P",
    "2": "DIV_TOP_IN"
@@ -3189,7 +3177,7 @@
    "R_2512_6332Metric"
   ],
   "val": "1k 1W fusible",
-  "mpn": "PLACEHOLDER 1k 1W fusible flameproof 2512",
+  "mpn": "25121WF1001T4E 1k 1W 2512 (fusible preferred if sourced)",
   "nets": {
    "1": "DIV_BOT_IN",
    "2": "BUS_N"
@@ -3207,7 +3195,7 @@
    "R_2512_6332Metric"
   ],
   "val": "1k 1W fusible",
-  "mpn": "PLACEHOLDER 1k 1W fusible flameproof 2512",
+  "mpn": "25121WF1001T4E 1k 1W 2512 (fusible preferred if sourced)",
   "nets": {
    "1": "BUS_P",
    "2": "BUS_P_F"
@@ -3225,7 +3213,7 @@
    "R_2512_6332Metric"
   ],
   "val": "1k 1W fusible",
-  "mpn": "PLACEHOLDER 1k 1W fusible flameproof 2512",
+  "mpn": "25121WF1001T4E 1k 1W 2512 (fusible preferred if sourced)",
   "nets": {
    "1": "BUS_N",
    "2": "BUS_N_F"
@@ -3692,8 +3680,8 @@
    "Resistor_SMD",
    "R_1206_3216Metric"
   ],
-  "val": "249k",
-  "mpn": "249k 1206 0.1%",
+  "val": "100k",
+  "mpn": "100k 1206 1%",
   "nets": {
    "1": "BUS_P_F",
    "2": "SNS1"
@@ -3710,8 +3698,8 @@
    "Resistor_SMD",
    "R_1206_3216Metric"
   ],
-  "val": "249k",
-  "mpn": "249k 1206 0.1%",
+  "val": "100k",
+  "mpn": "100k 1206 1%",
   "nets": {
    "1": "SNS1",
    "2": "SNS2"
@@ -3728,8 +3716,8 @@
    "Resistor_SMD",
    "R_1206_3216Metric"
   ],
-  "val": "249k",
-  "mpn": "249k 1206 0.1%",
+  "val": "100k",
+  "mpn": "100k 1206 1%",
   "nets": {
    "1": "SNS2",
    "2": "SNS3"
@@ -3746,8 +3734,8 @@
    "Resistor_SMD",
    "R_1206_3216Metric"
   ],
-  "val": "249k",
-  "mpn": "249k 1206 0.1%",
+  "val": "100k",
+  "mpn": "100k 1206 1%",
   "nets": {
    "1": "SNS3",
    "2": "SENSE_MID"
@@ -3764,8 +3752,8 @@
    "Resistor_SMD",
    "R_1206_3216Metric"
   ],
-  "val": "13.3k",
-  "mpn": "13.3k 1206 0.1% (0-152 V full scale)",
+  "val": "4.7k",
+  "mpn": "4.7k 1206 1%",
   "nets": {
    "1": "SENSE_MID",
    "2": "BUS_N_F"

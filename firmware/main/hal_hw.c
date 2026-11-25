@@ -49,7 +49,7 @@ void board_hal_init(void)
     gpio_config_t ig = {.pin_bit_mask = 1ULL << PIN_IG_SENSE, .mode = GPIO_MODE_INPUT};
     gpio_config(&ig);
 
-    // SPI: three MCP2515s on one bus, polling transactions from the CAN task
+    // SPI: three MCP2518FDs on one bus, polling transactions from the CAN task
     spi_bus_config_t bus = {.mosi_io_num = PIN_SPI_MOSI, .miso_io_num = PIN_SPI_MISO, .sclk_io_num = PIN_SPI_SCK,
                             .quadwp_io_num = -1, .quadhd_io_num = -1, .max_transfer_sz = 32};
     ESP_ERROR_CHECK(spi_bus_initialize(SPI2_HOST, &bus, SPI_DMA_DISABLED));
@@ -177,8 +177,9 @@ int32_t hal_bus_mv(void)
     adc_cali_raw_to_voltage(s_cali, raw, &p);
     adc_oneshot_read(s_adc1, ADC_CHANNEL_1, &raw);
     adc_cali_raw_to_voltage(s_cali, raw, &n);
-    // AMC1311: differential out = input (2 V full scale). Divider RS1-RS5: 152 V full scale -> x76
-    int32_t mv = (p - n) * 76;
+    // AMC1311: differential out = input (2 V full scale). Divider RS1-RS4 4 x 100k over RS5 4.7k (1 %):
+    // x86.1, 172 V full scale. Trim HV_DIV_X1000 against a meter on the pack once.
+    int32_t mv = (int32_t)((int64_t)(p - n) * HV_DIV_X1000 / 1000);
     return mv < 0 ? 0 : mv;
 }
 #endif

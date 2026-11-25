@@ -18,7 +18,7 @@ def load(path):
 
 
 def main(paths):
-    print("| Scenario | CPU model | Frames/s in | Lost (MCP2515 / TWAI / TX / log) | IMA fwd latency avg / max | "
+    print("| Scenario | CPU model | Frames/s in | Lost (CAN ctrl / TWAI / TX / log) | IMA fwd latency avg / max | "
           "SPI busy | Core 0 / Core 1 load | GVRET stream |")
     print("|---|---|---|---|---|---|---|---|")
     for p in paths:

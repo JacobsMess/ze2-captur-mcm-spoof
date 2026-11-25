@@ -5,7 +5,7 @@
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "hal.h"
-#include "mcp2515.h"
+#include "mcp.h"
 #include "stats.h"
 
 static const char *TAG = "gateway";
