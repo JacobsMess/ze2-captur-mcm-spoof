@@ -10,7 +10,7 @@ def cls(name, clr, w, vd=0.6, vdr=0.3):
 PATTERNS = {
     "Power": ["VBAT_P", "VIG_*", "VCOIL*", "COIL_*", "BMS12V", "PUMP_N", "BUCK_SW", "+5V", "LM_GATE"],
     "HV": ["BUS_P*", "DIV*", "TAP*", "VHB*", "SNS*"],
-    "HVLOW": ["BUS_N*", "SENSE_MID", "HV5V"],
+    "HVLOW": ["BUS_N*", "SENSE_MID", "HV5V*"],
 }
 pro = {
     "board": {"design_settings": {"rules": {"min_clearance": 0.12, "min_track_width": 0.12, "min_via_diameter": 0.45,

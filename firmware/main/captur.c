@@ -27,24 +27,42 @@ bool captur_wants(const can_frame_t *f)
 
 void captur_decode(const can_frame_t *f, uint32_t now_ms)
 {
+    pack_group_t g;
     if (f->id == ID_CELLS) {            // [0..1] min mV, [2..3] max mV
-        g_pack.cell_min_mv = u16(&f->data[0]);
-        g_pack.cell_max_mv = u16(&f->data[2]);
+        uint16_t lo = u16(&f->data[0]), hi = u16(&f->data[2]);
+        if (lo < 2000 || hi > 4500 || lo > hi) return;   // implausible: ignore, let the group go stale
+        g_pack.cell_min_mv = lo;
+        g_pack.cell_max_mv = hi;
+        g = GRP_CELLS;
     } else if (f->id == ID_PACK) {      // [0..1] pack V x10, [2..3] current A x10 signed, [4] SOC x2
-        g_pack.pack_mv = u16(&f->data[0]) * 100u;
+        uint32_t mv = u16(&f->data[0]) * 100u;
+        if (mv < 50000 || mv > 320000 || f->data[4] > 200) return;
+        g_pack.pack_mv = mv;
         g_pack.current_ma = (int16_t)u16(&f->data[2]) * 100;
         g_pack.soc_pct = f->data[4] * 0.5f;
+        g = GRP_PACK;
     } else if (f->id == ID_TEMPS) {     // [0] min C +40, [1] max C +40
-        g_pack.temp_min_c = (int8_t)(f->data[0] - 40);
-        g_pack.temp_max_c = (int8_t)(f->data[1] - 40);
+        int lo = f->data[0] - 40, hi = f->data[1] - 40;
+        if (lo < -40 || hi > 100 || lo > hi) return;
+        g_pack.temp_min_c = (int8_t)lo;
+        g_pack.temp_max_c = (int8_t)hi;
+        g = GRP_TEMPS;
     } else {
         return;
     }
-    g_pack.last_ms = now_ms;
-    g_pack.valid = true;
+    g_pack.last_ms[g] = now_ms;
+    g_pack.seen[g] = true;
+    g_pack.valid = g_pack.seen[GRP_CELLS] && g_pack.seen[GRP_PACK] && g_pack.seen[GRP_TEMPS];
 }
 
-bool captur_fresh(uint32_t now_ms) { return g_pack.valid && (int32_t)(now_ms - g_pack.last_ms) < BMS_TIMEOUT_MS; }
+bool captur_fresh(uint32_t now_ms)
+{
+    if (!g_pack.valid) return false;
+    for (int g = 0; g < GRP_COUNT; g++) {
+        if ((int32_t)(now_ms - g_pack.last_ms[g]) >= BMS_TIMEOUT_MS) return false;
+    }
+    return true;
+}
 
 void captur_tick(uint32_t now_ms, bool contactors_wanted)
 {

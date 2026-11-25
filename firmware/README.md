@@ -39,7 +39,8 @@ MCP2518FD driver, gateway, GVRET encoder, control loop.
 - The three MCP2518FDs are modelled at register level: 32-deep receive FIFO, 16-deep transmit FIFO,
   FIFO status and user-address registers, UINC/TXREQ, overflow flag and the INT line.
 - Every SPI transaction takes the time ESP-IDF documents for the S3 (9 µs for a one-byte polling
-  transaction), plus 0.5 µs per byte at 16 MHz.
+  transaction), plus 0.5 µs per byte at 16 MHz. Transactions are capped at 64 bytes, the S3's limit
+  without DMA, so the driver moves at most three frames per burst.
 - Each bus gets 8-byte frames at a set share of 500 kbit/s. All four run at once, everything is streamed
   over GVRET, and the IMA bus is split with every frame forwarded.
 
@@ -51,9 +52,9 @@ The full results are in [`sim/out/report.md`](sim/out/report.md) and the raw log
 
 | Scenario | Core 0 / core 1 load | SPI bus busy | IMA forward latency (avg) | Frames lost |
 |---|---|---|---|---|
-| Typical: EV 30 %, IMA 40 %, dash 30 % | 18-27 % / 22-46 % | 18-30 % | 92-177 µs | 0 |
-| Busy: 60 / 70 / 60 % | 29-39 % / 42-68 % | 33-48 % | 96-167 µs | 0 |
-| Worst case: all four buses 100 % | 36-45 % / 62-90 % | 51-69 % | 115-255 µs | 0 |
+| Typical: EV 30 %, IMA 40 %, dash 30 % | 18-28 % / 22-42 % | 18-28 % | 92-162 µs | 0 |
+| Busy: 60 / 70 / 60 % | 29-37 % / 40-71 % | 32-51 % | 94-184 µs | 0 |
+| Worst case: all four buses 100 % | 38-42 % / 65-92 % | 49-73 % | 100-262 µs | 0 |
 
 The first figure in each range is the 250 MIPS run, the second the 125 MIPS run. The SavvyCAN stream
 peaks at 0.32 MB/s (2.5 Mbit/s). ESP-IDF's Wi-Fi guide gives the S3 up to 20 Mbit/s TCP throughput.
@@ -66,7 +67,7 @@ peaks at 0.32 MB/s (2.5 Mbit/s). ESP-IDF's Wi-Fi guide gives the S3 up to 20 Mbi
   MCP2515 needed two transactions), so SPI load and latency are higher at low load. Under load the
   driver reads several frames per burst, which brings the cost per frame down.
 - **The ESP32-S3 has headroom** at realistic loads. Only the saturated, slow-CPU case pushes core 1 to
-  90 %, and still without loss. Wi-Fi and TCP cost isn't in these numbers (QEMU has no Wi-Fi); that
+  92 %, and still without loss. Wi-Fi and TCP cost isn't in these numbers (QEMU has no Wi-Fi); that
   load lands on core 0, which has spare capacity.
 
 **What to do about it:**

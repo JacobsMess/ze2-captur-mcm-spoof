@@ -7,9 +7,16 @@ spoof_board.kicad_pcb ready for Specctra autorouting.
 Parts marked PLACEHOLDER use a stand-in footprint and/or an unverified pinout: check the datasheet
 before ordering.
 """
+import os
+
 import pcbnew
 
 FP = "/usr/share/kicad/footprints/"
+LOCAL_FP = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib") + "/"  # project footprints (lib "ze2")
+
+
+def fp_path(lib):
+    return (LOCAL_FP if lib == "ze2" else FP) + lib + ".pretty"
 OX, OY = 50.0, 50.0  # board origin offset (mm)
 W, H = 120.0, 98.0
 
@@ -69,16 +76,13 @@ part("D10", ("Diode_SMD", "D_SOD-123"), "B5819W", "B5819W", {"1": "+5V", "2": "V
 
 # ---------------------------------------------------------------- power input (sheet 1)
 part("F1", ("Fuse", "Fuse_1812_4532Metric"), "2A PTC", "BSMD1812-200-30V", {"1": "VIG_RAW", "2": "VIG_F"}, (52.0, 38.0), 0)
-part("U1", ("Package_TO_SOT_SMD", "SOT-23-6"), "LM74700-Q1", "LM74700QDBVRQ1",
-     {"1": "LM_VCAP", "2": "VIG_F", "3": "GND", "4": "VIG_F", "5": "LM_GATE", "6": "VBAT_P"}, (58.0, 42.0), 0,
-     "PLACEHOLDER pinout - verify against datasheet")
-c("C1", "100n", "LM_VCAP", "VIG_F", (58.0, 45.5), 0)
-part("Q1", ("Package_TO_SOT_SMD", "TO-252-2"), "NCE6020AK", "NCE6020AK",
-     {"1": "LM_GATE", "2": "VBAT_P", "3": "VIG_F"}, (66.0, 40.0), 0)
+# reverse-battery protection: plain Schottky (the board's 12 V feed is well under 1 A); D_SMA pad 1 = cathode
+part("D7", ("Diode_SMD", "D_SMA"), "SS54", "SS54", {"1": "VBAT_P", "2": "VIG_F"}, (66.0, 38.0), 0)
 part("D1", ("Diode_SMD", "D_SMC"), "SMCJ33CA", "SMCJ33CA", {"1": "VBAT_P", "2": "GND"}, (66.0, 48.0), 0)
 c("C2", "10u 50V", "VBAT_P", "GND", (73.0, 40.0), 90, fp=C1206)
 c("C3", "10u 50V", "VBAT_P", "GND", (76.0, 40.0), 90, fp=C1206)
 c("C4", "10u 50V", "VBAT_P", "GND", (75.0, 44.0), 90, fp=C1206)
+c("C47", "10u 50V", "VBAT_P", "GND", (64.0, 58.5), 180, fp=C1206)  # buck input cap at U2's VIN/GND pins
 # buck LMR16006 (SOT-23-6: 1 CB, 2 GND, 3 FB, 4 EN, 5 VIN, 6 SW)
 part("U2", ("Package_TO_SOT_SMD", "SOT-23-6"), "LMR16006Y-Q1", "LMR16006YQDDCRQ1",
      {"1": "BUCK_CB", "2": "GND", "3": "BUCK_FB", "4": "VBAT_P", "5": "VBAT_P", "6": "BUCK_SW"}, (58.0, 58.0), 0)
@@ -185,9 +189,9 @@ can_port(3, "U18", "U19", "Y2", 14.0, "IMA_CANH", "IMA_CANL", "SPI_CS3", "CAN3_I
 can_port(4, "U20", "U21", "Y3", 45.0, "DASH_CANH", "DASH_CANL", "SPI_CS4", "CAN4_INT")
 # fail-safe bypass: relay de-energised = MCM side wired straight to car side (stock behaviour)
 part("K4", ("Relay_SMD", "Relay_DPDT_Omron_G6K-2F-Y"), "G6K-2F-Y 5VDC", "Omron G6K-2F-Y DC5",
-     {"1": "+5V", "8": "K4_COIL", "2": "IMA_CANH", "3": "MCM_CANH", "4": "K4_NO1",
-      "7": "IMA_CANL", "6": "MCM_CANL", "5": "K4_NO2"}, (80.5, 79.3), 0,
-     "PLACEHOLDER pin map: verify coil 1/8, COM 2/7, NC 3/6 against Omron datasheet")
+     {"1": "+5V", "8": "K4_COIL", "3": "IMA_CANH", "2": "MCM_CANH", "4": "K4_NO1",
+      "6": "IMA_CANL", "7": "MCM_CANL", "5": "K4_NO2"}, (80.5, 79.3), 0,
+     "COM 3/6 = PCM side, NC 2/7 = MCM side, NO 4/5 = PCM termination; beep it out before fitting")
 part("Q4", ("Package_TO_SOT_SMD", "SOT-23"), "2N7002", "2N7002", {"1": "Q4_G", "2": "GND", "3": "K4_COIL"}, (74.0, 85.4), 90)
 r("R78", "100", "RELAY_SPLIT", "Q4_G", (70.6, 83.6), 90)
 r("R79", "100k", "Q4_G", "GND", (72.0, 80.0), 90)
@@ -200,20 +204,22 @@ part("JP13", ("Jumper", "SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm"), "TERM
 r("R96", "120", "MCM_CANH", "TERM2", (75.0, 71.5), 0)
 part("JP12", ("Jumper", "SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm"), "TERM2", "solder jumper",
      {"1": "TERM2", "2": "TERM2_SW"}, (78.6, 71.5), 0)
-part("U22", ("Package_SO", "SOP-4_4.4x2.6mm_P1.27mm"), "AQY212GS", "Panasonic AQY212GSZ (60 V photoMOS)",
-     {"1": "TERM2_LED", "2": "K4_COIL", "3": "TERM2_SW", "4": "MCM_CANL"}, (80.5, 66.6), 0,
-     "PLACEHOLDER pinout: 1 LED A, 2 LED K, 3/4 output - verify")
+part("U22", ("Package_SO", "SOP-4_3.8x4.1mm_P2.54mm"), "AQY212GS", "Panasonic AQY212GS (60 V photoMOS)",
+     {"1": "TERM2_LED", "2": "K4_COIL", "3": "TERM2_SW", "4": "MCM_CANL"}, (80.5, 67.1), 0)
 r("R97", "470", "+5V", "TERM2_LED", (75.05, 66.5), 90)
 
 # ---------------------------------------------------------------- contactor drivers (sheet 2)
 part("F2", ("Fuse", "Fuse_2920_7451Metric"), "5A", "2920L500/30GR", {"1": "VCOIL_RAW", "2": "VCOIL"}, (20.0, 58.0), 0)
-vnd_note = "PLACEHOLDER: VND7050AJ is PowerSSO-16; HTSSOP-16 stand-in footprint and assumed pinout - verify"
 for ref, pos, out0, out1, in0, in1 in (("U8", (20.0, 70.0), "COIL_PRE", "COIL_MAINP", "HS_PRE_R", "HS_MAINP_R"),
                                        ("U9", (32.0, 70.0), "COIL_MAINN", "BMS12V", "HS_MAINN_R", "HS_BMS_R")):
-    nets = {"1": "GND", "2": in0, "3": "GND", "4": "GND", "5": "GND", "6": in1, "7": "NC_%s_7" % ref,
-            "8": "NC_%s_8" % ref, "9": out1, "10": out1, "11": out1, "12": out1, "13": out0, "14": out0,
+    # 1 IN0, 2 FaultRST (low = auto-restart), 3 SEn, 4 GND, 5 SEL0, 6 SEL1, 7 MultiSense, 8 IN1,
+    # 9-12 OUT1, 13-16 OUT0, TAB = VCC. Diagnostics unused: SEn/SELx/FaultRST low, MultiSense 1k to GND.
+    nets = {"1": in0, "2": "GND", "3": "GND", "4": "GND", "5": "GND", "6": "GND", "7": "MSENSE_%s" % ref,
+            "8": in1, "9": out1, "10": out1, "11": out1, "12": out1, "13": out0, "14": out0,
             "15": out0, "16": out0, "17": "VCOIL"}
-    part(ref, ("Package_SO", "HTSSOP-16-1EP_4.4x5mm_P0.65mm_EP3.4x5mm"), "VND7050AJ", "VND7050AJTR", nets, pos, 0, vnd_note)
+    part(ref, ("ze2", "ST_PowerSSO-16_3.9x4.9mm_P0.5mm_EP2.2x3.9mm"), "VND7050AJ", "VND7050AJTR", nets, pos, 0)
+r("R100", "1k", "MSENSE_U8", "GND", (24.0, 77.0), 0)
+r("R101", "1k", "MSENSE_U9", "GND", (34.0, 77.0), 0)
 for ref, a, b, pos in (("R10", "HS_PRE", "HS_PRE_R", (16.0, 64.0)), ("R11", "HS_MAINP", "HS_MAINP_R", (19.0, 64.0)),
                        ("R12", "HS_MAINN", "HS_MAINN_R", (28.0, 64.0)), ("R13", "HS_BMS", "HS_BMS_R", (31.0, 64.0))):
     r(ref, "4.7k", a, b, pos, 90)
@@ -222,18 +228,19 @@ c("C24", "100n", "VCOIL", "GND", (28.0, 76.0), 90)
 c("C25", "10u 50V", "VCOIL", "GND", (26.0, 58.0), 90, fp=C1206)
 part("Q2", ("Package_TO_SOT_SMD", "TO-252-2"), "NCE6020AK", "NCE6020AK",
      {"1": "Q2_G", "2": "COIL_RTN", "3": "GND"}, (45.0, 70.0), 0)
-r("R16", "100", "AND_Y", "Q2_G", (40.0, 64.0), 90)
+r("R16", "100", "MASTER_EN", "Q2_G", (40.0, 64.0), 90)
 r("R17", "100k", "Q2_G", "GND", (40.0, 76.0), 90)
 part("D2", ("Diode_SMD", "D_SMB"), "SMBJ33A", "SMBJ33A", {"1": "COIL_RTN", "2": "GND"}, (45.0, 77.0), 0)
-part("U10", ("Package_TO_SOT_SMD", "SOT-23-5"), "74LVC1G08", "SN74LVC1G08DBVR",
-     {"1": "WDT_OK", "2": "MCU_EN", "3": "GND", "4": "AND_Y", "5": "+5V"}, (38.0, 58.0), 0)
-c("C26", "100n", "+5V", "GND", (38.0, 54.5), 0)
+part("U10", ("Package_SO", "VSSOP-8_2.3x2mm_P0.5mm"), "74LVC1G74", "SN74LVC1G74DCUR",
+     {"1": "WDI", "2": "MCU_EN", "3": "NC_U10_QN", "4": "GND", "5": "MASTER_EN", "6": "WDT_OK", "7": "+3V3",
+      "8": "+3V3"}, (38.0, 58.0), 0)
+c("C26", "100n", "+3V3", "GND", (38.0, 54.5), 0)
 r("R18", "100k", "MCU_EN", "GND", (34.0, 54.5), 0)
 part("U11", ("Package_SON", "VSON-8-1EP_3x3mm_P0.65mm_EP1.65x2.4mm"), "TPS3431-Q1", "TPS3431SDRBRQ1",
-     {"1": "+3V3", "2": "WDT_CWD", "3": "WDT_OK", "4": "GND", "5": "+3V3", "6": "GND", "7": "+3V3", "8": "WDI", "9": "GND"},
-     (44.0, 58.0), 0, "PLACEHOLDER pinout - verify against TPS3431 datasheet")
-r("R19", "10k", "+3V3", "WDT_OK", (44.0, 54.0), 0)
-c("C27", "100n", "WDT_CWD", "GND", (48.0, 58.0), 90, mpn="CWD cap - value per TPS3431 timing")
+     {"1": "+3V3", "2": "NC_CWD", "3": "+3V3", "4": "GND", "5": "+3V3", "6": "WDI", "7": "WDT_OK", "8": "NC_ENOUT",
+      "9": "GND"}, (44.0, 58.0), 0)
+r("R19", "100k", "+3V3", "WDT_OK", (44.0, 54.0), 0)   # WDO pull-up; with C27 also the latch's power-on clear
+c("C27", "100n", "WDT_OK", "GND", (48.0, 58.0), 90)
 c("C28", "100n", "+3V3", "GND", (48.0, 62.0), 90)
 # pump
 part("Q3", ("Package_TO_SOT_SMD", "TO-252-2"), "NCE6020AK", "NCE6020AK",
@@ -284,24 +291,28 @@ c("C36", "100n", "ISL5V", "ISLGND", (82.5, 20.0), 90)
 r("R46", "10k", "ISL5V", "ISL5V_HALF", (78.0, 25.5), 0)
 r("R47", "10k", "ISL5V_HALF", "ISLGND", (78.0, 28.5), 0)
 
-# Isolation slots: only under the four parts that bridge the HV/LV gap (U12, PS1, K2, K3), where flux or dirt
+# Isolation slots: only under the three parts that bridge the HV/LV gap (U12, K2, K3), where flux or dirt
 # trapped under a body could bridge their pads. Elsewhere the 5.6 mm copper-free band alone gives the creepage
 # needed at <=150 V. 1.2 mm wide (JLC NPTH slot minimum is 1.0 mm). Board mm, origin = top-left corner.
-SLOTS = [(87.5, 14.5, 88.7, 21.5), (87.5, 25.8, 88.7, 39.6), (87.5, 41.6, 88.7, 50.4), (87.5, 53.6, 88.7, 62.4)]
+SLOTS = [(87.5, 14.0, 88.7, 23.0), (87.5, 41.6, 88.7, 50.4), (87.5, 53.6, 88.7, 62.4)]
 
 # ---------------------------------------------------------------- bridging parts (straddle the slot)
-part("U12", ("Package_SO", "SOIC-8_7.5x5.85mm_P1.27mm"), "AMC1311", "AMC1311DWVR",
-     {"1": "HV5V", "2": "SENSE_MID", "3": "BUS_N_F", "4": "BUS_N_F", "5": "GND", "6": "AMC_OUTN", "7": "AMC_OUTP", "8": "+5V"},
-     (88.1, 18.0), 180, "DWV 7.5 mm body, 8.5 mm creepage")
+part("U12", ("Package_SO", "SOIC-16W_7.5x10.3mm_P1.27mm"), "AMC3311", "AMC3311DWER",
+     {"1": "HV5V", "2": "BUS_N_F", "3": "HV5V", "4": "NC_U12_4", "5": "HV5V_LDO", "6": "SENSE_MID", "7": "BUS_N_F",
+      "8": "BUS_N_F", "9": "GND", "10": "AMC_OUTN", "11": "AMC_OUTP", "12": "+5V", "13": "AMC_LDO",
+      "14": "NC_U12_DIAG", "15": "GND", "16": "AMC_LDO"}, (88.1, 18.5), 180,
+     "integrated isolated DC/DC; DWE 7.5 mm body, 8 mm creepage")
+C0603 = ("Capacitor_SMD", "C_0603_1608Metric")  # 0603 so the HV-side caps keep 0.6 mm from the tap ladder
+c("C42", "1u", "HV5V", "BUS_N_F", (95.1, 20.4), 90, fp=C0603)
+c("C43", "1n", "HV5V", "BUS_N_F", (95.1, 23.4), 90, fp=C0603)
+c("C44", "100n", "HV5V_LDO", "BUS_N_F", (95.1, 17.4), 90, fp=C0603)
+c("C45", "1n", "HV5V_LDO", "BUS_N_F", (95.1, 14.4), 90, fp=C0603)
+c("C46", "100n", "AMC_LDO", "GND", (81.3, 20.6), 90, fp=C0603)
 r("R50", "100", "AMC_OUTP", "AMC_P", (80.0, 34.0), 90)
 r("R51", "100", "AMC_OUTN", "AMC_N", (82.0, 34.0), 90)
 c("C37", "10n", "AMC_P", "GND", (80.0, 38.0), 90)
 c("C38", "10n", "AMC_N", "GND", (82.0, 38.0), 90)
-c("C39", "100n", "+5V", "GND", (82.0, 24.0), 90)
-part("PS1", ("Converter_DCDC", "Converter_DCDC_Murata_NXExSxxxxMC_SMD"), "R1SX-0505", "RECOM R1SX-0505 1 kVDC (PLACEHOLDER: NXE footprint stand-in)",
-     {"1": "+5V", "3": "GND", "7": "GND", "8": "BUS_N_F", "14": "HV5V"}, (88.1, 34.0), 0,
-     "PLACEHOLDER: footprint is Murata NXE1 stand-in; check isolation DC-DC pinout")
-c("C40", "1u", "HV5V", "BUS_N_F", (95.0, 28.0), 90)
+c("C39", "100n", "+5V", "GND", (82.0, 24.0), 90, fp=("Capacitor_SMD", "C_0603_1608Metric"))
 for ref, y, en_net in (("K2", 46.0, "K2_LED"), ("K3", 58.0, "K3_LED")):
     top = ("DIV_TOP_IN", "DIV_TOP") if ref == "K2" else ("DIV_BOT", "DIV_BOT_IN")
     part(ref, ("Package_DIP", "SMDIP-6_W7.62mm"), "AQV214EH", "Panasonic AQV214EHAX (400 V)",
@@ -387,7 +398,8 @@ MOVES.update({
     "J1": ((9.5, 10.8), 270), "J2": ((9.5, 47.9), 270), "C40": ((93.0, 24.5), 0),
 })
 for ref, (pos, rot) in MOVES.items():
-    PARTS[ref]["pos"], PARTS[ref]["rot"] = pos, rot
+    if ref in PARTS:
+        PARTS[ref]["pos"], PARTS[ref]["rot"] = pos, rot
 
 MOVES.update({
     "U14": ((52.5, 16.5), 0), "C32": ((52.5, 12.5), 0), "C31": ((48.5, 6.0), 0), "R32": ((50.0, 9.5), 90),
@@ -403,13 +415,15 @@ MOVES.update({
     "R44": ((68.4, 24.0), 0), "R45": ((68.4, 26.5), 0), "C34": ((53.5, 23.0), 0),
 })
 for ref, (pos, rot) in MOVES.items():
-    PARTS[ref]["pos"], PARTS[ref]["rot"] = pos, rot
+    if ref in PARTS:
+        PARTS[ref]["pos"], PARTS[ref]["rot"] = pos, rot
 
 MOVES.update({
     "U8": ((24.0, 71.0), 270), "U9": ((34.0, 71.0), 270), "R10": ((21.5, 64.0), 90), "R11": ((24.0, 64.0), 90),
     "R12": ((31.5, 64.0), 90), "R13": ((34.0, 64.0), 90), "C23": ((19.0, 77.5), 0), "C24": ((29.0, 77.5), 0), })
 for ref, (pos, rot) in MOVES.items():
-    PARTS[ref]["pos"], PARTS[ref]["rot"] = pos, rot
+    if ref in PARTS:
+        PARTS[ref]["pos"], PARTS[ref]["rot"] = pos, rot
 
 MOVES.update({
     "C8": ((68.4, 66.5), 90), "D2": ((50.0, 62.5), 90), "D6": ((65.5, 72.0), 90), "R7": ((26.8, 30.5), 0),
@@ -418,18 +432,21 @@ MOVES.update({
     "C31": ((50.5, 11.0), 90),
 })
 for ref, (pos, rot) in MOVES.items():
-    PARTS[ref]["pos"], PARTS[ref]["rot"] = pos, rot
+    if ref in PARTS:
+        PARTS[ref]["pos"], PARTS[ref]["rot"] = pos, rot
 
 MOVES.update({"C30": ((40.8, 17.5), 90), "C31": ((50.2, 11.2), 0), "J1": ((9.5, 13.0), 270), "J2": ((9.5, 50.4), 270),
               "C8": ((76.2, 63.4), 0)})
 for ref, (pos, rot) in MOVES.items():
-    PARTS[ref]["pos"], PARTS[ref]["rot"] = pos, rot
+    if ref in PARTS:
+        PARTS[ref]["pos"], PARTS[ref]["rot"] = pos, rot
 
 MOVES.update({"J3": ((100.5, 3.0), 0), "J4": ((110.0, 74.0), 90), "RF1": ((93.5, 9.0), 90)})
 # v0.4: J3 turned 180 so the wire entry faces off the board edge, and overhangs it slightly
 MOVES.update({"J3": ((105.58, 9.5), 180)})  # body front ~1.5 mm past the top edge
 for ref, (pos, rot) in MOVES.items():
-    PARTS[ref]["pos"], PARTS[ref]["rot"] = pos, rot
+    if ref in PARTS:
+        PARTS[ref]["pos"], PARTS[ref]["rot"] = pos, rot
 
 MOVES.update({
     "RS1": ((115.0, 24.5), 90), "RS2": ((115.0, 29.5), 90), "RS3": ((115.0, 34.5), 90), "RS4": ((115.0, 39.5), 90),
@@ -437,7 +454,21 @@ MOVES.update({
 })
 MOVES["J5"] = ((78.0, 95.13), 0)  # USB-C face ~0.85 mm past the bottom edge
 for ref, (pos, rot) in MOVES.items():
-    PARTS[ref]["pos"], PARTS[ref]["rot"] = pos, rot
+    if ref in PARTS:
+        PARTS[ref]["pos"], PARTS[ref]["rot"] = pos, rot
+
+# v0.6 (first design review): AMC3311 and its capacitors, AQY212GS on its real 2.54 mm pitch footprint
+MOVES.update({"U12": ((88.1, 18.5), 180), "C39": ((81.3, 16.9), 90), "C46": ((81.3, 20.6), 90),
+              "C42": ((95.1, 20.4), 90), "C43": ((95.1, 23.4), 90), "C44": ((95.1, 17.4), 90), "C45": ((95.1, 14.4), 90),
+              "U22": ((80.5, 67.1), 0), "D7": ((66.0, 38.0), 0), "C47": ((64.0, 58.5), 180),
+              "R100": ((24.0, 77.0), 0), "R101": ((34.0, 77.0), 0),
+              # crystals on the MCP2518FD's OSC side (pins 5/6), so the oscillator traces stay short
+              "Y1": ((39.675, 41.65), 0), "C18": ((39.675, 44.65), 0), "C19": ((38.175, 38.65), 0),
+              "Y2": ((9.425, 95.65), 0), "C72": ((8.925, 91.9), 90), "C73": ((5.925, 89.65), 0),
+              "Y3": ((38.925, 94.4), 0), "C76": ((38.925, 91.4), 0), "C77": ((35.425, 94.4), 90)})
+for ref, (pos, rot) in MOVES.items():
+    if ref in PARTS:
+        PARTS[ref]["pos"], PARTS[ref]["rot"] = pos, rot
 
 # ================================================================== build
 def mm(x, y):
@@ -464,7 +495,7 @@ def build(path):
 
     for ref, p in PARTS.items():
         lib, name = p["fp"]
-        fp = pcbnew.FootprintLoad(FP + lib + ".pretty", name)
+        fp = pcbnew.FootprintLoad(fp_path(lib), name)
         if fp is None:
             raise SystemExit(f"missing footprint {lib}:{name}")
         fp.SetReference(ref)
@@ -519,7 +550,7 @@ def build(path):
         t.SetTextThickness(pcbnew.FromMM(size * 0.15))
         board.Add(t)
     silk("HV <=150V DANGER", 104.0, 96.0, 1.5)
-    silk("ZE2 LiB MCM SPOOF v0.5", 96.0, 91.5, 1.0)
+    silk("ZE2 LiB MCM SPOOF v0.6", 96.0, 91.5, 1.0)
     silk("ANALOG ISLAND", 66.0, 2.0, 1.0)
     rect(90.5, 1.0, 119.0, 97.0, layer=pcbnew.F_SilkS, width=0.25)
 

@@ -14,7 +14,7 @@ board sits between the MCM and the new pack and makes the MCM believe it still h
 - **Stage 2 (later):** 68S, about 260 V, MCM removed, ZombieVerter VCU + Toyota inverter. The board is then
   only a CAN gateway; its HV side is not used.
 
-Status: designed, simulated, not built. The designer is not an electronics engineer. The design was
+Status: v0.6, designed, simulated, not built. One AI review has been folded in already (v0.6 in the git log). The designer is not an electronics engineer. The design was
 produced with an AI assistant, so assume nothing has been checked by a human expert.
 
 ## The board
@@ -23,20 +23,20 @@ ESP32-S3-WROOM-1 module, 4-layer, 120 x 98 mm, parts on top, made and assembled 
 
 | Block | What it does | Main parts |
 |---|---|---|
-| Power | 12 V car feed -> reverse protection -> 5 V buck -> 3.3 V LDO | LM74700 + FET, LMR16006 (60 V), TLV75733, SMCJ33CA TVS |
+| Power | 12 V car feed -> reverse protection -> 5 V buck -> 3.3 V LDO | SS54 series Schottky, LMR16006 (60 V), TLV75733, SMCJ33CA TVS |
 | CAN1 | EV bus: Captur BMS now, ZombieVerter later | ESP32 TWAI + TJA1051 |
 | CAN2 / CAN3 | The IMA bus cut in two: MCM half and PCM half. Firmware forwards frames between them (man-in-the-middle) | MCP2518FD + TJA1051 each |
 | Bypass relay | K4 (DPDT) joins the two IMA halves whenever the board is unpowered or not ready | Omron G6K-2F-Y |
 | Switched terminations | 120 ohm at the board end of each split half, only while K4 is energised, each behind a solder jumper (open by default) | K4 spare contacts, AQY212GS photoMOS |
 | CAN4 | Dash bus tap, listen only in stage 1 | MCP2518FD + TJA1051 |
 | Cell taps | A 16-resistor divider across the real pack bus gives the MCM nine balanced "block" voltages. Two optoMOS connect it; unpowered = taps float = MCM faults safely | 47k 0.1 %, AQV214EH x2 |
-| Bus sense | Isolated measurement of the pack bus voltage for precharge and weld checks | AMC1311 + isolated 5 V DC-DC |
+| Bus sense | Isolated measurement of the pack bus voltage for precharge and weld checks | AMC3311 (isolated amplifier with its own isolated supply) |
 | Analog island | Fakes the three NTC temperature inputs and adds a small offset to the Hall current-sensor signal (steers the MCM's own SOC count). Runs from the MCM's 5 V sensor supply, I2C-isolated from the rest | MCP4728 DAC, MCP6004, ADS1115 x2, ISO1540 |
-| Contactor drive | Drives the Captur pack's precharge and main contactors and its BMS 12 V feed | VND7050AJ high-side x2; low-side master FET enabled by firmware AND a window watchdog |
-| Watchdog | Window watchdog; if the firmware hangs, the contactors open in hardware | TPS3431 |
+| Contactor drive | Drives the Captur pack's precharge and main contactors and its BMS 12 V feed | VND7050AJ high-side x2; low-side master FET driven by an enable latch |
+| Watchdog latch | Each watchdog kick (WDI edge) clocks MCU_EN into a D flip-flop whose Q drives the master FET. A watchdog timeout clears the flip-flop and it stays off until firmware re-arms; an RC gives a power-on clear | TPS3431, SN74LVC1G74 |
 
-HV strip: right-hand edge, 150 V maximum, separated by a 5.6 mm copper-free band. Only four isolation
-parts cross it (K2, K3, U12, PS1), with a short slot under each.
+HV strip: right-hand edge, 150 V maximum, separated by a 5.6 mm copper-free band. Only three isolation
+parts cross it (K2, K3, U12), with a short slot under each.
 
 ## Connectors
 
@@ -62,15 +62,15 @@ parts cross it (K2, K3, U12, PS1), with a short slot under each.
 
 ## Known open items
 
-- Placeholders to check against datasheets: VND7050AJ (stand-in footprint, assumed pinout), TPS3431 and
-  LM74700 pinouts, the isolated DC-DC footprint (R1SX-0505 on a Murata stand-in), K4 pin map, AQY212GS and
-  H24VNT2B pinouts.
-- Not stocked at JLC (hand fit): AQV214EH x2, TPS3431, R1SX-0505, and the five THT connectors.
+- Pinouts taken from datasheets but not yet checked by a person: VND7050AJ (custom PowerSSO-16 footprint),
+  TPS3431, SN74LVC1G74, AMC3311, K4 contact map, AQY212GS, H24VNT2B.
+- Not stocked at JLC (hand fit): AQV214EH x2, TPS3431, and the five THT connectors. AMC3311 stock is low.
+- HV strip gaps are 0.7 mm or more (IPC-2221 B2 uncoated, 101-150 V, wants 0.6 mm); conformal coating planned.
 - Unknowns about the car: MCM tap input impedance and timing, NTC pull-ups, Hall sensor zero and scale,
   IMA bus load and terminations. These get measured before anything is connected.
 - The bus-sense divider uses 1 % parts; its ratio is trimmed in firmware (`HV_DIV_X1000`).
 - Firmware has only run in simulation (ESP32-S3 QEMU with modelled CAN controllers): no frames lost at
-  any bus load, CAN core 22-68 % at realistic loads.
+  any bus load, CAN core 22-71 % at realistic loads.
 
 ## What to review
 

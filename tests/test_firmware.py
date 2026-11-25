@@ -56,3 +56,19 @@ def test_hv_divider_scale_matches_firmware(parts):
     bot = k(parts["RS5"]["val"])
     assert abs(CFG["HV_DIV_X1000"] - 1000 * (top + bot) / bot) < 5
     assert 2.0 * (top + bot) / bot > 4.2 * 34 + 10, "full scale must clear a full 34S pack with margin"
+
+
+def test_spi_and_twai_config_fit_the_hardware():
+    hw = (MAIN / "hal_hw.c").read_text()
+    drv = (MAIN / "mcp2518fd.c").read_text()
+    assert "SPI_DMA_DISABLED" in hw and ".max_transfer_sz = 64" in hw
+    assert re.search(r"#define MCP_MAX_XFER 64", drv), "bursts must fit the 64-byte non-DMA buffer"
+    assert "ESP_INTR_FLAG_IRAM" not in hw.split("TWAI_GENERAL_CONFIG_DEFAULT")[1].split("twai_driver_install")[0], \
+        "TWAI IRAM interrupt needs CONFIG_TWAI_ISR_IN_IRAM"
+
+
+def test_bms_data_freshness_is_per_group():
+    src = (MAIN / "captur.c").read_text()
+    assert "for (int g = 0; g < GRP_COUNT; g++)" in src
+    z = (MAIN / "zombie.c").read_text()
+    assert "captur_fresh(now_ms) && g_safety.level < SAFE_SOFT_TRIP" in z

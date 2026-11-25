@@ -6,6 +6,7 @@
 // is read only when the driver believes the FIFO is full. All SPI traffic happens on the CAN task (core 1).
 #include "mcp.h"
 
+#include <assert.h>
 #include <string.h>
 #include "config.h"
 #include "esp_attr.h"
@@ -62,7 +63,9 @@ static const char *TAG = "mcp2518fd";
 #define TX_DEPTH 16
 #define RX_DEPTH 32
 #define OBJ 16                     // 8-byte header + 8 data bytes
-#define RX_BATCH 8                 // frames per service call, so one busy bus can't starve the other chips
+#define MCP_MAX_XFER 64            // bytes per SPI transaction: ESP32-S3 SPI master without DMA
+#define RX_BATCH ((MCP_MAX_XFER - 2) / OBJ)   // 3 frames per burst and per service call
+#define TX_BURST ((MCP_MAX_XFER - 2) / OBJ)   // objects per RAM write
 #define TXQ_LEN 64
 
 typedef struct {
@@ -94,7 +97,8 @@ static inline void hdr(uint8_t *b, uint8_t cmd, uint16_t addr)
 
 static void read_n(int chip, uint16_t addr, uint8_t *out, size_t n)
 {
-    uint8_t tx[2 + 8 * OBJ] = {0}, rx[2 + 8 * OBJ];
+    uint8_t tx[MCP_MAX_XFER] = {0}, rx[MCP_MAX_XFER];
+    assert(n + 2 <= MCP_MAX_XFER);
     hdr(tx, CMD_READ, addr);
     xfer(chip, tx, rx, n + 2);
     memcpy(out, rx + 2, n);
@@ -109,7 +113,8 @@ static uint32_t rd32(int chip, uint16_t addr)
 
 static void write_n(int chip, uint16_t addr, const uint8_t *in, size_t n)
 {
-    uint8_t tx[2 + TX_DEPTH * OBJ], rx[2 + TX_DEPTH * OBJ];
+    uint8_t tx[MCP_MAX_XFER], rx[MCP_MAX_XFER];
+    assert(n + 2 <= MCP_MAX_XFER);
     hdr(tx, CMD_WRITE, addr);
     memcpy(tx + 2, in, n);
     xfer(chip, tx, rx, n + 2);
@@ -220,10 +225,10 @@ void mcp_tx_pump(int chip)
         m->tx_free = !(sta & FS_TFNRFNIF) ? 0 : TX_DEPTH - ((m->tx_head - FS_FIFOCI(sta)) & (TX_DEPTH - 1));
         if (!m->tx_free) return;
     }
-    uint8_t buf[TX_DEPTH * OBJ];
+    uint8_t buf[TX_BURST * OBJ];
     int n = 0;
     uint16_t start = m->tx_head;
-    while (m->tail != m->head && n < m->tx_free && start + n < TX_DEPTH) {   // contiguous run up to the wrap
+    while (m->tail != m->head && n < m->tx_free && n < TX_BURST && start + n < TX_DEPTH) {   // contiguous, no wrap
         encode(&m->q[m->tail], buf + n * OBJ);
         m->tail = (m->tail + 1) % TXQ_LEN;
         n++;

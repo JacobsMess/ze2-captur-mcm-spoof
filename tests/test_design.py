@@ -62,3 +62,43 @@ def test_split_terminations_within_iso11898(parts):
     # two halves in series must land in 100-130 ohm
     for a, b in (("R7", "R8"), ("R88", "R89")):
         assert 100 <= float(parts[a]["val"]) + float(parts[b]["val"]) <= 130
+
+
+def test_watchdog_pinout_and_latch(parts):
+    # TPS3431 DRB: 1 VDD, 2 CWD (open = 1.6 s), 3 EN, 4 GND, 5 SET1, 6 WDI, 7 WDO, 8 ENOUT
+    u11 = parts["U11"]["nets"]
+    assert (u11["6"], u11["7"], u11["5"], u11["3"]) == ("WDI", "WDT_OK", "+3V3", "+3V3")
+    assert u11["2"].startswith("NC_"), "CWD left open: factory 1.6 s timeout"
+    # SN74LVC1G74: WDI edges clock MCU_EN in; the watchdog output clears it and it stays clear
+    u10 = parts["U10"]["nets"]
+    assert (u10["1"], u10["2"], u10["5"], u10["6"], u10["7"], u10["8"]) == \
+        ("WDI", "MCU_EN", "MASTER_EN", "WDT_OK", "+3V3", "+3V3")
+    assert {net(parts, "R16", 1), net(parts, "R16", 2)} == {"MASTER_EN", "Q2_G"}
+    assert {net(parts, "C27", 1), net(parts, "C27", 2)} == {"WDT_OK", "GND"}, "power-on clear of the latch"
+
+
+def test_high_side_drivers_inputs_on_input_pins(parts):
+    # VND7050AJ PowerSSO-16: 1 IN0, 2 FaultRST, 3 SEn, 4 GND, 5 SEL0, 6 SEL1, 7 MultiSense, 8 IN1
+    for ref, in0, in1 in (("U8", "HS_PRE_R", "HS_MAINP_R"), ("U9", "HS_MAINN_R", "HS_BMS_R")):
+        n = parts[ref]["nets"]
+        assert (n["1"], n["8"]) == (in0, in1), ref
+        assert all(n[p] == "GND" for p in "23456"), ref
+        ms = n["7"]
+        assert any(set(parts[r]["nets"].values()) == {ms, "GND"} and parts[r]["val"] == "1k" for r in parts), \
+            f"{ref} MultiSense needs 1k to GND"
+
+
+def test_bypass_relay_contact_map(parts):
+    # Omron G6K: COM 3/6, NC 2/7, NO 4/5. Coil off: PCM side (COM) joined to MCM side (NC).
+    k = parts["K4"]["nets"]
+    assert (k["3"], k["6"]) == ("IMA_CANH", "IMA_CANL")
+    assert (k["2"], k["7"]) == ("MCM_CANH", "MCM_CANL")
+    assert (k["4"], k["5"]) == ("K4_NO1", "K4_NO2")
+
+
+def test_reverse_protection_and_isolated_sense(parts):
+    assert "U1" not in parts and parts["D7"]["nets"] == {"1": "VBAT_P", "2": "VIG_F"}   # D_SMA pad 1 = cathode
+    u = parts["U12"]["nets"]   # AMC3311: HV side 1-8, LV side 9-16
+    assert parts["U12"]["mpn"].startswith("AMC3311")
+    assert (u["1"], u["3"], u["6"], u["12"], u["13"], u["16"]) == ("HV5V", "HV5V", "SENSE_MID", "+5V", "AMC_LDO", "AMC_LDO")
+    assert "PS1" not in parts

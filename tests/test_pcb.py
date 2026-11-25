@@ -6,7 +6,7 @@ from conftest import OX, OY, counts, mm
 # library table, and KiCad's own GCT USB4105 footprint puts its locating pegs 0.19 mm from the shield pads.
 ALLOWED = {"lib_footprint_issues", "hole_clearance"}
 HV_BAND = (85.4, 91.0)  # copper-free strip between the HV and LV sides (board mm)
-BRIDGES = {"U12", "PS1", "K2", "K3"}  # isolation parts allowed to straddle it
+BRIDGES = {"U12", "K2", "K3"}  # isolation parts allowed to straddle it
 
 
 def test_fully_routed(drc):

@@ -51,7 +51,8 @@ void board_hal_init(void)
 
     // SPI: three MCP2518FDs on one bus, polling transactions from the CAN task
     spi_bus_config_t bus = {.mosi_io_num = PIN_SPI_MOSI, .miso_io_num = PIN_SPI_MISO, .sclk_io_num = PIN_SPI_SCK,
-                            .quadwp_io_num = -1, .quadhd_io_num = -1, .max_transfer_sz = 32};
+                            .quadwp_io_num = -1, .quadhd_io_num = -1, .max_transfer_sz = 64};
+    // no DMA: every transaction fits the 64-byte CPU buffer (mcp2518fd.c caps its bursts at MCP_MAX_XFER)
     ESP_ERROR_CHECK(spi_bus_initialize(SPI2_HOST, &bus, SPI_DMA_DISABLED));
     for (int i = 0; i < MCP_COUNT; i++) {
         spi_device_interface_config_t d = {.clock_speed_hz = MCP_SPI_HZ, .mode = 0, .spics_io_num = CS_PIN[i],
@@ -70,7 +71,6 @@ void board_hal_init(void)
     twai_general_config_t g = TWAI_GENERAL_CONFIG_DEFAULT(PIN_TWAI_TX, PIN_TWAI_RX, TWAI_MODE_NORMAL);
     g.rx_queue_len = 128;
     g.tx_queue_len = 32;
-    g.intr_flags = ESP_INTR_FLAG_IRAM;
     twai_timing_config_t t = TWAI_TIMING_CONFIG_500KBITS();
     twai_filter_config_t f = TWAI_FILTER_CONFIG_ACCEPT_ALL();
     if (twai_driver_install(&g, &t, &f) == ESP_OK) twai_start();

@@ -10,12 +10,24 @@ static ct_state_t s_st = CT_OPEN;
 static uint32_t s_t0;
 static const char *s_fault = "";
 
+static bool s_wdi;
+
+// U10 (D flip-flop) clocks MCU_EN into the coil-return master FET on each WDI rising edge, and the watchdog
+// clears it. Give it an edge now, so enabling or disabling takes effect at once rather than at the next kick.
+static void master_enable(bool on)
+{
+    hal_out(OUT_MCU_EN, on);
+    hal_out(OUT_WDI, false);
+    hal_out(OUT_WDI, true);
+    s_wdi = true;
+}
+
 static void all_open(void)
 {
     hal_out(OUT_HS_MAINP, false);
     hal_out(OUT_HS_PRE, false);
     hal_out(OUT_HS_MAINN, false);
-    hal_out(OUT_MCU_EN, false);
+    master_enable(false);
 }
 
 void contactors_init(void)
@@ -30,11 +42,10 @@ const char *contactors_fault(void) { return s_fault; }
 void contactors_kick_watchdog(uint32_t now_ms)
 {
     static uint32_t last;
-    static bool level;
     if (now_ms - last >= WDI_PERIOD_MS / 2) {   // toggle: one edge per WDI_PERIOD_MS/2
         last = now_ms;
-        level = !level;
-        hal_out(OUT_WDI, level);
+        s_wdi = !s_wdi;
+        hal_out(OUT_WDI, s_wdi);
     }
 }
 
@@ -55,7 +66,7 @@ void contactors_tick(uint32_t now_ms, bool want_closed)
         if (want_closed && g_pack.valid) {
             // weld check: with everything open the bus side must be dead
             if (bus_mv > 20000) { fault("bus live with contactors open (weld?)"); break; }
-            hal_out(OUT_MCU_EN, true);
+            master_enable(true);
             hal_out(OUT_HS_MAINN, true);
             hal_out(OUT_HS_PRE, true);
             s_t0 = now_ms;

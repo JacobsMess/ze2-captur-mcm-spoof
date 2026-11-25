@@ -240,57 +240,16 @@
   "rot": 90,
   "note": ""
  },
- "U1": {
+ "D7": {
   "fp": [
-   "Package_TO_SOT_SMD",
-   "SOT-23-6"
+   "Diode_SMD",
+   "D_SMA"
   ],
-  "val": "LM74700-Q1",
-  "mpn": "LM74700QDBVRQ1",
+  "val": "SS54",
+  "mpn": "SS54",
   "nets": {
-   "1": "LM_VCAP",
-   "2": "VIG_F",
-   "3": "GND",
-   "4": "VIG_F",
-   "5": "LM_GATE",
-   "6": "VBAT_P"
-  },
-  "pos": [
-   57.5,
-   41.0
-  ],
-  "rot": 0,
-  "note": "PLACEHOLDER pinout - verify against datasheet"
- },
- "C1": {
-  "fp": [
-   "Capacitor_SMD",
-   "C_0805_2012Metric"
-  ],
-  "val": "100n",
-  "mpn": "100n 0805 X7R",
-  "nets": {
-   "1": "LM_VCAP",
+   "1": "VBAT_P",
    "2": "VIG_F"
-  },
-  "pos": [
-   58.0,
-   44.5
-  ],
-  "rot": 0,
-  "note": ""
- },
- "Q1": {
-  "fp": [
-   "Package_TO_SOT_SMD",
-   "TO-252-2"
-  ],
-  "val": "NCE6020AK",
-  "mpn": "NCE6020AK",
-  "nets": {
-   "1": "LM_GATE",
-   "2": "VBAT_P",
-   "3": "VIG_F"
   },
   "pos": [
    66.0,
@@ -369,6 +328,24 @@
    44.0
   ],
   "rot": 90,
+  "note": ""
+ },
+ "C47": {
+  "fp": [
+   "Capacitor_SMD",
+   "C_1206_3216Metric"
+  ],
+  "val": "10u 50V",
+  "mpn": "10u 50V 1206 X7R",
+  "nets": {
+   "1": "VBAT_P",
+   "2": "GND"
+  },
+  "pos": [
+   64.0,
+   58.5
+  ],
+  "rot": 180,
   "note": ""
  },
  "U2": {
@@ -1026,10 +1003,10 @@
    "4": "GND"
   },
   "pos": [
-   56.0,
-   34.0
+   39.675,
+   41.65
   ],
-  "rot": 90,
+  "rot": 0,
   "note": ""
  },
  "C18": {
@@ -1044,8 +1021,8 @@
    "2": "GND"
   },
   "pos": [
-   56.0,
-   30.0
+   39.675,
+   44.65
   ],
   "rot": 0,
   "note": ""
@@ -1062,8 +1039,8 @@
    "2": "GND"
   },
   "pos": [
-   56.0,
-   38.0
+   38.175,
+   38.65
   ],
   "rot": 0,
   "note": ""
@@ -1209,10 +1186,10 @@
    "4": "GND"
   },
   "pos": [
-   22.0,
-   85.5
+   9.425,
+   95.65
   ],
-  "rot": 90,
+  "rot": 0,
   "note": ""
  },
  "C72": {
@@ -1227,10 +1204,10 @@
    "2": "GND"
   },
   "pos": [
-   22.0,
-   82.0
+   8.925,
+   91.9
   ],
-  "rot": 0,
+  "rot": 90,
   "note": ""
  },
  "C73": {
@@ -1245,8 +1222,8 @@
    "2": "GND"
   },
   "pos": [
-   22.0,
-   89.0
+   5.925,
+   89.65
   ],
   "rot": 0,
   "note": ""
@@ -1410,10 +1387,10 @@
    "4": "GND"
   },
   "pos": [
-   53.0,
-   85.5
+   38.925,
+   94.4
   ],
-  "rot": 90,
+  "rot": 0,
   "note": ""
  },
  "C76": {
@@ -1428,8 +1405,8 @@
    "2": "GND"
   },
   "pos": [
-   53.0,
-   82.0
+   38.925,
+   91.4
   ],
   "rot": 0,
   "note": ""
@@ -1446,10 +1423,10 @@
    "2": "GND"
   },
   "pos": [
-   53.0,
-   89.0
+   35.425,
+   94.4
   ],
-  "rot": 0,
+  "rot": 90,
   "note": ""
  },
  "C78": {
@@ -1649,11 +1626,11 @@
   "nets": {
    "1": "+5V",
    "8": "K4_COIL",
-   "2": "IMA_CANH",
-   "3": "MCM_CANH",
+   "3": "IMA_CANH",
+   "2": "MCM_CANH",
    "4": "K4_NO1",
-   "7": "IMA_CANL",
-   "6": "MCM_CANL",
+   "6": "IMA_CANL",
+   "7": "MCM_CANL",
    "5": "K4_NO2"
   },
   "pos": [
@@ -1661,7 +1638,7 @@
    79.3
   ],
   "rot": 0,
-  "note": "PLACEHOLDER pin map: verify coil 1/8, COM 2/7, NC 3/6 against Omron datasheet"
+  "note": "COM 3/6 = PCM side, NC 2/7 = MCM side, NO 4/5 = PCM termination; beep it out before fitting"
  },
  "Q4": {
   "fp": [
@@ -1811,10 +1788,10 @@
  "U22": {
   "fp": [
    "Package_SO",
-   "SOP-4_4.4x2.6mm_P1.27mm"
+   "SOP-4_3.8x4.1mm_P2.54mm"
   ],
   "val": "AQY212GS",
-  "mpn": "Panasonic AQY212GSZ (60 V photoMOS)",
+  "mpn": "Panasonic AQY212GS (60 V photoMOS)",
   "nets": {
    "1": "TERM2_LED",
    "2": "K4_COIL",
@@ -1823,10 +1800,10 @@
   },
   "pos": [
    80.5,
-   66.6
+   67.1
   ],
   "rot": 0,
-  "note": "PLACEHOLDER pinout: 1 LED A, 2 LED K, 3/4 output - verify"
+  "note": ""
  },
  "R97": {
   "fp": [
@@ -1866,20 +1843,20 @@
  },
  "U8": {
   "fp": [
-   "Package_SO",
-   "HTSSOP-16-1EP_4.4x5mm_P0.65mm_EP3.4x5mm"
+   "ze2",
+   "ST_PowerSSO-16_3.9x4.9mm_P0.5mm_EP2.2x3.9mm"
   ],
   "val": "VND7050AJ",
   "mpn": "VND7050AJTR",
   "nets": {
-   "1": "GND",
-   "2": "HS_PRE_R",
+   "1": "HS_PRE_R",
+   "2": "GND",
    "3": "GND",
    "4": "GND",
    "5": "GND",
-   "6": "HS_MAINP_R",
-   "7": "NC_U8_7",
-   "8": "NC_U8_8",
+   "6": "GND",
+   "7": "MSENSE_U8",
+   "8": "HS_MAINP_R",
    "9": "COIL_MAINP",
    "10": "COIL_MAINP",
    "11": "COIL_MAINP",
@@ -1895,24 +1872,24 @@
    71.0
   ],
   "rot": 270,
-  "note": "PLACEHOLDER: VND7050AJ is PowerSSO-16; HTSSOP-16 stand-in footprint and assumed pinout - verify"
+  "note": ""
  },
  "U9": {
   "fp": [
-   "Package_SO",
-   "HTSSOP-16-1EP_4.4x5mm_P0.65mm_EP3.4x5mm"
+   "ze2",
+   "ST_PowerSSO-16_3.9x4.9mm_P0.5mm_EP2.2x3.9mm"
   ],
   "val": "VND7050AJ",
   "mpn": "VND7050AJTR",
   "nets": {
-   "1": "GND",
-   "2": "HS_MAINN_R",
+   "1": "HS_MAINN_R",
+   "2": "GND",
    "3": "GND",
    "4": "GND",
    "5": "GND",
-   "6": "HS_BMS_R",
-   "7": "NC_U9_7",
-   "8": "NC_U9_8",
+   "6": "GND",
+   "7": "MSENSE_U9",
+   "8": "HS_BMS_R",
    "9": "BMS12V",
    "10": "BMS12V",
    "11": "BMS12V",
@@ -1928,7 +1905,43 @@
    71.0
   ],
   "rot": 270,
-  "note": "PLACEHOLDER: VND7050AJ is PowerSSO-16; HTSSOP-16 stand-in footprint and assumed pinout - verify"
+  "note": ""
+ },
+ "R100": {
+  "fp": [
+   "Resistor_SMD",
+   "R_0805_2012Metric"
+  ],
+  "val": "1k",
+  "mpn": "1k 0805 1%",
+  "nets": {
+   "1": "MSENSE_U8",
+   "2": "GND"
+  },
+  "pos": [
+   24.0,
+   77.0
+  ],
+  "rot": 0,
+  "note": ""
+ },
+ "R101": {
+  "fp": [
+   "Resistor_SMD",
+   "R_0805_2012Metric"
+  ],
+  "val": "1k",
+  "mpn": "1k 0805 1%",
+  "nets": {
+   "1": "MSENSE_U9",
+   "2": "GND"
+  },
+  "pos": [
+   34.0,
+   77.0
+  ],
+  "rot": 0,
+  "note": ""
  },
  "R10": {
   "fp": [
@@ -2083,7 +2096,7 @@
   "val": "100",
   "mpn": "100 0805 1%",
   "nets": {
-   "1": "AND_Y",
+   "1": "MASTER_EN",
    "2": "Q2_G"
   },
   "pos": [
@@ -2131,17 +2144,20 @@
  },
  "U10": {
   "fp": [
-   "Package_TO_SOT_SMD",
-   "SOT-23-5"
+   "Package_SO",
+   "VSSOP-8_2.3x2mm_P0.5mm"
   ],
-  "val": "74LVC1G08",
-  "mpn": "SN74LVC1G08DBVR",
+  "val": "74LVC1G74",
+  "mpn": "SN74LVC1G74DCUR",
   "nets": {
-   "1": "WDT_OK",
+   "1": "WDI",
    "2": "MCU_EN",
-   "3": "GND",
-   "4": "AND_Y",
-   "5": "+5V"
+   "3": "NC_U10_QN",
+   "4": "GND",
+   "5": "MASTER_EN",
+   "6": "WDT_OK",
+   "7": "+3V3",
+   "8": "+3V3"
   },
   "pos": [
    36.0,
@@ -2158,7 +2174,7 @@
   "val": "100n",
   "mpn": "100n 0805 X7R",
   "nets": {
-   "1": "+5V",
+   "1": "+3V3",
    "2": "GND"
   },
   "pos": [
@@ -2195,13 +2211,13 @@
   "mpn": "TPS3431SDRBRQ1",
   "nets": {
    "1": "+3V3",
-   "2": "WDT_CWD",
-   "3": "WDT_OK",
+   "2": "NC_CWD",
+   "3": "+3V3",
    "4": "GND",
    "5": "+3V3",
-   "6": "GND",
-   "7": "+3V3",
-   "8": "WDI",
+   "6": "WDI",
+   "7": "WDT_OK",
+   "8": "NC_ENOUT",
    "9": "GND"
   },
   "pos": [
@@ -2209,15 +2225,15 @@
    58.0
   ],
   "rot": 0,
-  "note": "PLACEHOLDER pinout - verify against TPS3431 datasheet"
+  "note": ""
  },
  "R19": {
   "fp": [
    "Resistor_SMD",
    "R_0805_2012Metric"
   ],
-  "val": "10k",
-  "mpn": "10k 0805 1%",
+  "val": "100k",
+  "mpn": "100k 0805 1%",
   "nets": {
    "1": "+3V3",
    "2": "WDT_OK"
@@ -2235,9 +2251,9 @@
    "C_0805_2012Metric"
   ],
   "val": "100n",
-  "mpn": "CWD cap - value per TPS3431 timing",
+  "mpn": "100n 0805 X7R",
   "nets": {
-   "1": "WDT_CWD",
+   "1": "WDT_OK",
    "2": "GND"
   },
   "pos": [
@@ -2923,26 +2939,124 @@
  "U12": {
   "fp": [
    "Package_SO",
-   "SOIC-8_7.5x5.85mm_P1.27mm"
+   "SOIC-16W_7.5x10.3mm_P1.27mm"
   ],
-  "val": "AMC1311",
-  "mpn": "AMC1311DWVR",
+  "val": "AMC3311",
+  "mpn": "AMC3311DWER",
   "nets": {
    "1": "HV5V",
-   "2": "SENSE_MID",
-   "3": "BUS_N_F",
-   "4": "BUS_N_F",
-   "5": "GND",
-   "6": "AMC_OUTN",
-   "7": "AMC_OUTP",
-   "8": "+5V"
+   "2": "BUS_N_F",
+   "3": "HV5V",
+   "4": "NC_U12_4",
+   "5": "HV5V_LDO",
+   "6": "SENSE_MID",
+   "7": "BUS_N_F",
+   "8": "BUS_N_F",
+   "9": "GND",
+   "10": "AMC_OUTN",
+   "11": "AMC_OUTP",
+   "12": "+5V",
+   "13": "AMC_LDO",
+   "14": "NC_U12_DIAG",
+   "15": "GND",
+   "16": "AMC_LDO"
   },
   "pos": [
    88.1,
-   18.0
+   18.5
   ],
   "rot": 180,
-  "note": "DWV 7.5 mm body, 8.5 mm creepage"
+  "note": "integrated isolated DC/DC; DWE 7.5 mm body, 8 mm creepage"
+ },
+ "C42": {
+  "fp": [
+   "Capacitor_SMD",
+   "C_0603_1608Metric"
+  ],
+  "val": "1u",
+  "mpn": "1u 0603 X7R",
+  "nets": {
+   "1": "HV5V",
+   "2": "BUS_N_F"
+  },
+  "pos": [
+   95.1,
+   20.4
+  ],
+  "rot": 90,
+  "note": ""
+ },
+ "C43": {
+  "fp": [
+   "Capacitor_SMD",
+   "C_0603_1608Metric"
+  ],
+  "val": "1n",
+  "mpn": "1n 0603 X7R",
+  "nets": {
+   "1": "HV5V",
+   "2": "BUS_N_F"
+  },
+  "pos": [
+   95.1,
+   23.4
+  ],
+  "rot": 90,
+  "note": ""
+ },
+ "C44": {
+  "fp": [
+   "Capacitor_SMD",
+   "C_0603_1608Metric"
+  ],
+  "val": "100n",
+  "mpn": "100n 0603 X7R",
+  "nets": {
+   "1": "HV5V_LDO",
+   "2": "BUS_N_F"
+  },
+  "pos": [
+   95.1,
+   17.4
+  ],
+  "rot": 90,
+  "note": ""
+ },
+ "C45": {
+  "fp": [
+   "Capacitor_SMD",
+   "C_0603_1608Metric"
+  ],
+  "val": "1n",
+  "mpn": "1n 0603 X7R",
+  "nets": {
+   "1": "HV5V_LDO",
+   "2": "BUS_N_F"
+  },
+  "pos": [
+   95.1,
+   14.4
+  ],
+  "rot": 90,
+  "note": ""
+ },
+ "C46": {
+  "fp": [
+   "Capacitor_SMD",
+   "C_0603_1608Metric"
+  ],
+  "val": "100n",
+  "mpn": "100n 0603 X7R",
+  "nets": {
+   "1": "AMC_LDO",
+   "2": "GND"
+  },
+  "pos": [
+   81.3,
+   20.6
+  ],
+  "rot": 90,
+  "note": ""
  },
  "R50": {
   "fp": [
@@ -3019,58 +3133,19 @@
  "C39": {
   "fp": [
    "Capacitor_SMD",
-   "C_0805_2012Metric"
+   "C_0603_1608Metric"
   ],
   "val": "100n",
-  "mpn": "100n 0805 X7R",
+  "mpn": "100n 0603 X7R",
   "nets": {
    "1": "+5V",
    "2": "GND"
   },
   "pos": [
-   82.0,
-   24.0
+   81.3,
+   16.9
   ],
   "rot": 90,
-  "note": ""
- },
- "PS1": {
-  "fp": [
-   "Converter_DCDC",
-   "Converter_DCDC_Murata_NXExSxxxxMC_SMD"
-  ],
-  "val": "R1SX-0505",
-  "mpn": "RECOM R1SX-0505 1 kVDC (PLACEHOLDER: NXE footprint stand-in)",
-  "nets": {
-   "1": "+5V",
-   "3": "GND",
-   "7": "GND",
-   "8": "BUS_N_F",
-   "14": "HV5V"
-  },
-  "pos": [
-   88.1,
-   34.0
-  ],
-  "rot": 0,
-  "note": "PLACEHOLDER: footprint is Murata NXE1 stand-in; check isolation DC-DC pinout"
- },
- "C40": {
-  "fp": [
-   "Capacitor_SMD",
-   "C_0805_2012Metric"
-  ],
-  "val": "1u",
-  "mpn": "1u 0805 X7R",
-  "nets": {
-   "1": "HV5V",
-   "2": "BUS_N_F"
-  },
-  "pos": [
-   93.0,
-   24.5
-  ],
-  "rot": 0,
   "note": ""
  },
  "K2": {

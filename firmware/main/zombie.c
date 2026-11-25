@@ -12,15 +12,17 @@ static void put16(uint8_t *p, int v) { p[0] = v; p[1] = v >> 8; }
 void zombie_tick(uint32_t now_ms, bool stage2)
 {
     static uint32_t last;
-    if (!stage2 || now_ms - last < 100 || !g_pack.valid) return;
+    if (!stage2 || now_ms - last < 100) return;
     last = now_ms;
     const pack_state_t *p = &g_pack;
+    // stale data or any trip: advertise zero charge and discharge current, so the VCU stops using the pack
+    bool ok = captur_fresh(now_ms) && g_safety.level < SAFE_SOFT_TRIP;
     can_frame_t f = {.dlc = 8};
 
     f.id = 0x351;   // charge V limit x10, charge A x10, discharge A x10, discharge V x10
     put16(&f.data[0], PACK_SERIES * 2 * CELL_MAX_MV / 100);   // stage 2 is 68S
-    put16(&f.data[2], g_safety.regen_inhibit ? 0 : 300);
-    put16(&f.data[4], g_safety.assist_inhibit ? 0 : 600);
+    put16(&f.data[2], ok && !g_safety.regen_inhibit ? 300 : 0);
+    put16(&f.data[4], ok && !g_safety.assist_inhibit ? 600 : 0);
     put16(&f.data[6], PACK_SERIES * 2 * CELL_MIN_MV / 100);
     can_send(BUS_EV, &f);
 

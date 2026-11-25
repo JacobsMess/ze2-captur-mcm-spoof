@@ -34,7 +34,7 @@ def sheet1(path):
         note(d, (0, 3.2), "Sheet 1 - Power input, MCU, CAN", 15)
         d += elm.Dot(open=True).at((0, 0)).label("J1 IG +12V", "left")
         d += elm.Fuse().right().label("F1 2A PTC")
-        d += elm.Diode().right().label("Q1/U1 LM74700\nideal diode")
+        d += elm.Diode().right().label("D7 SS54\nreverse block")
         d += (n1 := elm.Dot())
         d += elm.Line().right(1.2)
         d += (b1 := elm.Dot())
@@ -56,7 +56,7 @@ def sheet1(path):
 
         mcu = ic(d, (10, -14), 6.5, 8.5, "U4 ESP32-S3-WROOM-1-N8R2\nWiFi: GVRET, web UI, OTA",
                  left=("SPI", "GPIO TWAI_RX", "GPIO TWAI_TX"),
-                 right=("USB D+/D-", "IG_SENSE", "AMC1311 ADC", "OPTO_EN", "HS IN", "MCU_EN", "WDI", "I2C"))
+                 right=("USB D+/D-", "IG_SENSE", "AMC3311 ADC", "OPTO_EN", "HS IN", "MCU_EN", "WDI", "I2C"))
         t1 = ic(d, (1.5, -8.6), 2.8, 2.2, "U5 TJA1051T/3\nCAN1 -> Captur BMS",
                 left=("CANH", "CANL"), right=("TXD", "RXD"), bottom=("S",))
         wire(d, t1.TXD, mcu["GPIO TWAI_TX"], "-|")
@@ -86,7 +86,7 @@ def sheet1(path):
              "IO39 CS2 / IO38 INT2 (CAN2 MCM side), IO9 CS3 / IO3 INT3 (CAN3 car side),\n"
              "IO48 CS4 / IO14 INT4 (CAN4 dash), IO42 RELAY_SPLIT (sheet 5),\n"
              "IO15/16/17/21 HS IN, IO7 MCU_EN, IO6 WDI (sheet 2), IO47 PUMP_PWM,\n"
-             "IO41 OPTO_EN, IO1/IO2 AMC1311 P/N (sheet 3), IO8/18 I2C -> ISO1540 (sheet 4),\n"
+             "IO41 OPTO_EN, IO1/IO2 AMC3311 P/N (sheet 3), IO8/18 I2C -> ISO1540 (sheet 4),\n"
              "IO10 IG_SENSE (100k/22k), IO19/20 USB.")
         d.save(path, dpi=DPI, transparent=False)
 
@@ -128,17 +128,19 @@ def sheet2(path):
         d += (q := elm.NFet(bulk=False).anchor("drain").down())
         d += elm.Ground().at(q.source)
         note(d, (q.drain[0] + 0.6, q.drain[1] - 0.2), "Q2 master\nlow-side FET", 8)
-        g = ic(d, (q.gate[0] - 5.0, q.gate[1] - 1.6), 2.2, 1.8, "U10 74LVC1G08 AND", left=("A", "B"), right=("Y",), lab_loc="bottom")
-        wire(d, g.Y, q.gate, "-|")
-        d += elm.Line().at(g.B).left(1.4).label("MCU_EN", "left")
-        wd = ic(d, (g.A[0] - 5.6, g.A[1] - 2.8), 2.4, 1.6, "U11 TPS3431\nwindow WDT", left=("WDI",), right=("WDO",), lab_loc="bottom")
-        wire(d, wd.WDO, g.A, "-|")
-        d += elm.Line().at(wd.WDI).left(1.2).label("WDI (MCU kick)", "left")
+        g = ic(d, (q.gate[0] - 5.0, q.gate[1] - 1.8), 2.4, 2.2, "U10 74LVC1G74 D-FF", left=("D", "CLK", "CLR"), right=("Q",), lab_loc="bottom")
+        wire(d, g.Q, q.gate, "-|")
+        d += elm.Line().at(g.D).left(1.4).label("MCU_EN", "left")
+        d += elm.Line().at(g.CLK).left(1.4).label("WDI (MCU kick)", "left")
+        wd = ic(d, (g.CLR[0] - 5.6, g.CLR[1] - 2.8), 2.4, 1.6, "U11 TPS3431\nwatchdog", left=("WDI",), right=("WDO",), lab_loc="bottom")
+        wire(d, wd.WDO, g.CLR, "-|")
+        d += elm.Line().at(wd.WDI).left(1.2).label("WDI", "left")
 
         note(d, (0, -14.5),
-             "Every coil needs BOTH its high-side command AND the low-side master enable (MCU_EN AND WDT_OK).\n"
+             "Every coil needs BOTH its high-side command AND the low-side master enable (MASTER_EN = latched MCU_EN).\n"
+             "WDI edges clock MCU_EN into U10; a WDT timeout clears it and it stays off until firmware re-arms. C27 = power-on clear.\n"
              "VND7050AJ: current limit, thermal shutdown, ~-40V internal clamp = fast-decay coil, fast contact opening.\n"
-             "MultiSense / SEn / SEL tied to GND (diagnostics unused): contactor state is verified by the isolated bus-voltage sense (sheet 3). No plain flyback diodes on coils.")
+             "MultiSense to 1k (unused), SEn/SEL to GND: contactor state is verified by the isolated bus-voltage sense (sheet 3). No plain flyback diodes on coils.")
 
         d += elm.Dot(open=True).at((0, -18.5)).label("VCOIL", "left")
         d += elm.Line().right(2)
@@ -196,11 +198,11 @@ def sheet3(path):
         note(d, (12.4, -2.6), "4.7k", 8)
         d += elm.Dot(open=True).label("BUS-", "left")
         amc = ic(d, (14.0, -3.0), 4.4, 2.0, "", left=("VIN",), right=("VOUT",), top=("VDD1", "VDD2"))
-        note(d, (14.0, -3.4), "U12 AMC1311\nreinforced isolated amp", 9)
+        note(d, (14.0, -3.4), "U12 AMC3311\nreinforced iso amp + iso DC/DC", 9)
         wire(d, m.center, amc.VIN, "-|")
         d += elm.Line().at(amc.VOUT).right(1.2).label("to MCU ADC (LV)", "right", fontsize=8)
         d += elm.Line().at(amc.VDD1).up(1.4)
-        note(d, (13.0, amc.VDD1[1] + 2.4), "R1SX-0505 iso 5V\n(HV side)", 8)
+        note(d, (13.0, amc.VDD1[1] + 2.4), "HV side powered\ninternally (HV5V)", 8)
         d += elm.Line().at(amc.VDD2).up(1.4)
         note(d, (amc.VDD2[0] + 0.2, amc.VDD2[1] + 2.4), "+5V (LV side)", 8)
         note(d, (12, -8.5),

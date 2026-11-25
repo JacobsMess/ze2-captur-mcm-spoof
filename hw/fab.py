@@ -104,7 +104,8 @@ fee = jlc_parts.EXT_FEE
 with open(os.path.join(OUTDIR, "cost.md"), "w") as fh:
     fh.write("# One-board cost estimate (JLC assembly)\n\n"
              "LCSC unit prices from `hw/jlc_parts.py`; fees are JLC's standard-assembly figures. PCB fabrication and\n"
-             "shipping are not included.\n\n"
+             "shipping are not included. JLC fits the ESP32-S3-WROOM-1 with Standard assembly only; fit it by hand to\n"
+             "keep the order on Economic assembly.\n\n"
              "| Item | USD |\n|---|---|\n"
              f"| Parts, one board (all lines) | {cost['parts']:.2f} |\n"
              f"| Extended-part fees, {len(cost['ext'])} SMT types x ${fee:.0f} | {len(cost['ext']) * fee:.0f} |\n"
