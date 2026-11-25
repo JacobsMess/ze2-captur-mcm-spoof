@@ -1,0 +1,3 @@
+# Simulation build for QEMU: virtual CAN buses + MCP2515 models replace the hardware drivers.
+CONFIG_ZE2_SIM=y
+CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT=y

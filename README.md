@@ -99,9 +99,15 @@ J3 overhangs the top edge with its wire entry facing out, and the USB-C face sit
 
 ## Firmware
 
-Not written yet. The plan: GVRET over Wi-Fi for SavvyCAN (all four buses), forwarding on one
-core and Wi-Fi on the other, and OTA updates accepted only with ignition off and the Captur
-contactors confirmed open, with automatic rollback.
+ESP-IDF firmware in [`firmware/`](firmware/), which builds cleanly but hasn't run on a board yet. It
+covers all four CAN buses, the IMA man-in-the-middle, the spoofing, contactor sequencing and the
+protection ladder. It also streams everything to SavvyCAN over Wi-Fi (GVRET) and takes firmware updates
+over Wi-Fi with rollback, accepted only with the ignition off and the contactors open.
+
+A simulation build runs the real firmware against modelled buses and MCP2515s on Espressif's ESP32-S3
+QEMU, with all four buses up to 100 % load. The S3 itself has headroom: core 1 (CAN) peaks at 54-70 %
+and core 0 at 35-45 %. The weak point is the MCP2515's two-frame receive buffer. See
+[`firmware/README.md`](firmware/README.md) for the numbers and what to do about it.
 
 ## Building from source
 
@@ -129,6 +135,7 @@ CAN termination and bypass wiring in the netlist; and the JLC files against the 
 |---|---|
 | `hw/` | generators, router, KiCad board and project, `parts.json` netlist |
 | `hw/out/` | JLC gerbers, BOM, CPL and the DRC report |
+| `firmware/` | ESP-IDF firmware, simulation build and its results (`firmware/sim/out/`) |
 | `docs/` | schematic script and the README images |
 | `tests/` | pytest checks |
 

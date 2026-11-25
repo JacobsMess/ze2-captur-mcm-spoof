@@ -7,3 +7,7 @@ hw/scene/
 hw/out/jlc/gerbers/
 hw/out/jlc/pos_raw.csv
 *.lck
+firmware/build*/
+firmware/sdkconfig
+firmware/sdkconfig.old
+firmware/dependencies.lock

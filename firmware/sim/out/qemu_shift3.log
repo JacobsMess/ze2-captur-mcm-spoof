@@ -1,0 +1,74 @@
+Adding SPI flash device
+ESP-ROM:esp32s3-20210327
+Build:Mar 27 2021
+rst:0x1 (POWERON),boot:0x4 (SPI_FLASH_BOOT)
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce2810,len:0x1564
+load:0x403c8700,len:0x4
+load:0x403c8704,len:0xd24
+load:0x403cb700,len:0x2f2c
+entry 0x403c8928
+I (39) boot: ESP-IDF v5.4.4 2nd stage bootloader
+I (39) boot: compile time Nov 25 2026 17:11:13
+I (39) boot: Multicore bootloader
+I (44) boot: chip revision: v0.0
+I (44) boot: efuse block revision: v0.0
+I (44) boot.esp32s3: Boot SPI Speed : 80MHz
+I (44) boot.esp32s3: SPI Mode       : SLOW READ
+I (44) boot.esp32s3: SPI Flash Size : 8MB
+I (44) boot: Enabling RNG early entropy source...
+I (47) boot: Partition Table:
+I (47) boot: ## Label            Usage          Type ST Offset   Length
+I (47) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (47) boot:  1 otadata          OTA data         01 00 0000f000 00002000
+I (47) boot:  2 phy_init         RF data          01 01 00011000 00001000
+I (47) boot:  3 ota_0            OTA app          00 10 00020000 003c0000
+I (47) boot:  4 ota_1            OTA app          00 11 003e0000 003c0000
+I (47) boot: End of partition table
+I (49) boot: No factory image, trying OTA 0
+I (49) esp_image: segment 0: paddr=00020020 vaddr=3c020020 size=0b4b8h ( 46264) map
+I (75) esp_image: segment 1: paddr=0002b4e0 vaddr=3fc93400 size=02f48h ( 12104) load
+I (94) esp_image: segment 2: paddr=0002e430 vaddr=40374000 size=01be8h (  7144) load
+I (99) esp_image: segment 3: paddr=00030020 vaddr=42000020 size=1b910h (112912) map
+I (126) esp_image: segment 4: paddr=0004b938 vaddr=40375be8 size=0d774h ( 55156) load
+I (147) esp_image: segment 5: paddr=000590b4 vaddr=50000000 size=0001ch (    28) load
+I (150) boot: Loaded app from partition at offset 0x20000
+I (150) boot: Set actual ota_seq=1 in otadata[0]
+I (150) boot: Disabling RNG early entropy source...
+W (404) rtcinit: o_code calibration fail
+
+I (202) cpu_start: Multicore app
+I (265) cpu_start: GPIO 44 and 43 are used as console UART I/O pins
+I (265) cpu_start: Pro cpu start user code
+I (265) cpu_start: cpu freq: 240000000 Hz
+I (265) app_init: Application information:
+I (265) app_init: Project name:     ze2_spoof
+I (265) app_init: App version:      323deec
+I (265) app_init: Compile time:     Nov 25 2026 17:10:26
+I (265) app_init: ELF file SHA256:  ec6aaa86c...
+I (265) app_init: ESP-IDF:          v5.4.4
+I (265) efuse_init: Min chip rev:     v0.0
+I (265) efuse_init: Max chip rev:     v0.99 
+I (265) efuse_init: Chip rev:         v0.0
+I (265) heap_init: Initializing. RAM available for dynamic allocation:
+I (265) heap_init: At 3FCA3088 len 00046688 (281 KiB): RAM
+I (265) heap_init: At 3FCE9710 len 00005724 (21 KiB): RAM
+I (265) heap_init: At 3FCF0000 len 00008000 (32 KiB): DRAM
+I (265) heap_init: At 600FE000 len 00001FE8 (7 KiB): RTCRAM
+I (265) spi_flash: detected chip: gd
+I (265) spi_flash: flash io: dio
+I (265) sleep_gpio: Configure to isolate all GPIO pins in sleep state
+I (265) sleep_gpio: Enable automatic switching of GPIO sleep configuration
+I (272) main_task: Started on CPU0
+I (272) main_task: Calling app_main()
+I (326) main: stage 1, IMA man-in-the-middle enabled [SIMULATION BUILD]
+I (326) gvret: streaming all buses on TCP port 23
+I (326) main_task: Returned from app_main()
+SIM bus clock: 1596 ticks in 200 ms (expect ~1600)
+W (537) gateway: BYPASS -> SPLIT
+I (836) contactors: closed after 295 ms precharge
+SIMRESULT {"scenario":"typical (EV 30%, IMA 40%, dash 30%)","seconds":5.90,"generated":{"ev":7088,"mcm_side":4725,"pcm_side":4725,"dash":7088},"received":{"ev":7088,"mcm":4725,"pcm":4724,"dash":7073},"mcp_rx_overflows":16,"twai_queue_overflows":0,"forwarded":9449,"wire_tx":9449,"tx_drops":0,"fwd_latency_us":{"avg":110,"max":728,"hist_lt":{"100":4489,"200":4597,"400":200,"800":163,"1600":0,"3200":0,"6400":0,"more":0}},"spi_busy_pct":18.6,"can_task_longest_pass_us":1281,"gvret_kbyte_s":112.1,"log_drops":0,"cpu_pct":{"core0_raw":36.6,"core0_minus_sim":28.0,"core1":27.2},"qemu_core1_freeze_max_us":506,"gateway":1,"contactors":2,"safety":0}
+SIMRESULT {"scenario":"busy (EV 60%, IMA 70%, dash 60%)","seconds":5.83,"generated":{"ev":14008,"mcm_side":8172,"pcm_side":8172,"dash":14008},"received":{"ev":14008,"mcm":8154,"pcm":8145,"dash":13885},"mcp_rx_overflows":168,"twai_queue_overflows":0,"forwarded":16299,"wire_tx":16299,"tx_drops":0,"fwd_latency_us":{"avg":118,"max":1003,"hist_lt":{"100":7334,"200":8007,"400":631,"800":322,"1600":5,"3200":0,"6400":0,"more":0}},"spi_busy_pct":34.0,"can_task_longest_pass_us":1922,"gvret_kbyte_s":207.4,"log_drops":0,"cpu_pct":{"core0_raw":52.5,"core0_minus_sim":40.2,"core1":50.5},"qemu_core1_freeze_max_us":108,"gateway":1,"contactors":2,"safety":0}
+SIMRESULT {"scenario":"worst case (all four buses 100%)","seconds":5.77,"generated":{"ev":23108,"mcm_side":11554,"pcm_side":11554,"dash":23108},"received":{"ev":23106,"mcm":11513,"pcm":11499,"dash":21894},"mcp_rx_overflows":1309,"twai_queue_overflows":0,"forwarded":23012,"wire_tx":23009,"tx_drops":0,"fwd_latency_us":{"avg":130,"max":987,"hist_lt":{"100":9605,"200":11291,"400":1458,"800":620,"1600":38,"3200":0,"6400":0,"more":0}},"spi_busy_pct":52.4,"can_task_longest_pass_us":3802,"gvret_kbyte_s":315.3,"log_drops":0,"cpu_pct":{"core0_raw":61.3,"core0_minus_sim":44.7,"core1":70.4},"qemu_core1_freeze_max_us":134,"gateway":1,"contactors":2,"safety":0}
+SIMDONE

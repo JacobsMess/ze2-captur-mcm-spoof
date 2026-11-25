@@ -1,0 +1,15 @@
+menu "ZE2 spoof board"
+    config ZE2_SIM
+        bool "Simulation build (virtual CAN buses for QEMU load testing)"
+        default n
+    config ZE2_SIM_SECONDS
+        int "Seconds per simulated scenario"
+        depends on ZE2_SIM
+        default 6
+    config ZE2_WIFI_AP_SSID
+        string "Wi-Fi access point SSID"
+        default "ZE2-SPOOF"
+    config ZE2_WIFI_AP_PASS
+        string "Wi-Fi access point password (8+ chars)"
+        default "change-me-please"
+endmenu
