@@ -1,0 +1,6 @@
+Hardware (hw/, including the scripts that generate the board, and the images in docs/img/):
+  CERN Open Hardware Licence Version 2 - Permissive (CERN-OHL-P-2.0), see LICENSES/CERN-OHL-P-2.0.txt
+Software (tests/, docs/schematic.py and the render scripts):
+  MIT, see LICENSES/MIT.txt
+
+Copyright (c) 2026 @AUTHOR@
