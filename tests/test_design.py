@@ -112,3 +112,17 @@ def test_low_side_fets_get_5v_gate_drive(parts):
         assert parts[buf]["mpn"].startswith("SN74LV1T34")
         assert (n["2"], n["3"], n["4"], n["5"]) == (src, "GND", drv, "+5V"), buf
         assert {net(parts, res, 1), net(parts, res, 2)} == {drv, gate}
+
+
+def test_pump_line_readback(parts):
+    # PUMP_N / 3.55 to GPIO35: a 9 V line still reads high (VIH 2.475 V), 16 V stays under 4.6 V
+    assert {net(parts, "R102", 1), net(parts, "R102", 2)} == {"PUMP_N", "PUMP_SENSE"}
+    assert {net(parts, "R103", 1), net(parts, "R103", 2)} == {"PUMP_SENSE", "GND"}
+    k = lambda r: float(parts[r]["val"].rstrip("k")) * 1000
+    ratio = k("R103") / (k("R102") + k("R103"))
+    assert 9.0 * ratio > 2.475 and 16.0 * ratio < 4.6
+
+
+def test_tap_ladder_is_low_impedance(parts):
+    rd = [p for r, p in parts.items() if r.startswith("RD")]
+    assert len(rd) == 16 and {p["val"] for p in rd} == {"10k"}, "one 0.1 % SKU, low source impedance"

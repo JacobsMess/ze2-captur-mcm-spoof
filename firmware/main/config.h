@@ -29,7 +29,8 @@
 #define PIN_SPI_MISO     13  // pin 21
 #define PIN_CAN4_INT     14  // pin 22 MCP2518FD U20 (dash bus tap)
 #define PIN_HS_BMS       21  // pin 23 Captur BMS 12 V feed
-#define PIN_PUMP_PWM     47  // pin 24 coolant pump
+#define PIN_PUMP_PWM     47  // pin 24 coolant pump (U24 -> Q3)
+#define PIN_PUMP_SENSE   35  // pin 28 pump line / 3.55 (R102/R103): high above about 9 V
 #define PIN_SPI_CS4      48  // pin 25
 #define PIN_CAN2_INT     38  // pin 31 MCP2518FD U6 (MCM side of the IMA bus)
 #define PIN_SPI_CS2      39  // pin 32
@@ -70,7 +71,7 @@ typedef enum { BUS_EV = 0, BUS_MCM = 1, BUS_PCM = 2, BUS_DASH = 3, BUS_COUNT = 4
 #define DEAD_BUS_MV        20000      // below this the link counts as dead (weld check)
 #define MAIN_PICKUP_MS     100        // precharge held this long after main+ is commanded
 #define CLOSE_VERIFY_MS    100        // then link must be >= CLOSED_MIN_PCT of pack
-#define CLOSED_MIN_PCT     95
+#define CLOSED_MIN_PCT     92         // allows for the untrimmed 1 % bus-sense divider
 #define BUS_COLLAPSE_PCT   70         // closed, link below this % of pack: fault
 #define PACK_TOL_PCT       3          // BMS cell sum vs 68 x cell range: 3 % + 2 V
 #define PACK_TOL_MV        2000
@@ -81,6 +82,12 @@ typedef enum { BUS_EV = 0, BUS_MCM = 1, BUS_PCM = 2, BUS_DASH = 3, BUS_COUNT = 4
 #define IGN_ON_MS          100
 #define IGN_OFF_MV         6000       // key-off below this for IGN_OFF_MS (rides through a crank dip)
 #define IGN_OFF_MS         2000
+
+// ---------------------------------------------------------------- coolant pump (pump.h)
+#define PUMP_PWM_HZ        20000      // 2-wire brushed pump chopped above audio
+#define PUMP_SIGNAL_HZ     100        // 3-wire pump signal line
+#define PUMP_MIN_DUTY      0.3f       // PWM mode: below this a brushed pump may stall
+#define PUMP_SETTLE_MS     100        // Q3 steady this long before the line readback counts
 
 // ---------------------------------------------------------------- timing
 #define CONTROL_PERIOD_MS  10

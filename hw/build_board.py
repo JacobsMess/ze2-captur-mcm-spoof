@@ -106,7 +106,7 @@ esp = {"1": "GND", "40": "GND", "41": "GND", "2": "+3V3", "3": "ESP_EN", "4": "T
        "6": "WDI", "7": "MCU_EN", "8": "HS_PRE", "9": "HS_MAINP", "10": "HS_MAINN", "11": "SCL1", "12": "SDA1",
        "13": "USB_DN", "14": "USB_DP", "15": "CAN3_INT", "16": "NC_IO46", "17": "SPI_CS3", "18": "IG_SENSE",
        "19": "SPI_MOSI", "20": "SPI_SCK", "21": "SPI_MISO", "22": "CAN4_INT", "23": "HS_BMS", "24": "PUMP_PWM",
-       "25": "SPI_CS4", "26": "NC_IO45", "27": "BOOT", "28": "NC_IO35", "29": "NC_IO36", "30": "NC_IO37",
+       "25": "SPI_CS4", "26": "NC_IO45", "27": "BOOT", "28": "PUMP_SENSE", "29": "NC_IO36", "30": "NC_IO37",
        "31": "CAN2_INT", "32": "SPI_CS", "33": "NC_IO40", "34": "OPTO_EN", "35": "RELAY_SPLIT", "36": "NC_RXD0",
        "37": "NC_TXD0", "38": "AMC_N", "39": "AMC_P"}
 part("U4", ("RF_Module", "ESP32-S3-WROOM-1"), "ESP32-S3-WROOM-1-N8R2", "ESP32-S3-WROOM-1-N8R2", esp, (30.0, 15.0), 0)
@@ -256,6 +256,9 @@ part("D6", ("Diode_SMD", "D_SMA"), "SS54", "SS54", {"1": "VCOIL", "2": "PUMP_N"}
 part("U24", SC70, "SN74LV1T34", "SN74LV1T34DCKR", {"1": "NC_U24", "2": "PUMP_PWM", "3": "GND", "4": "Q3_DRV", "5": "+5V"},
      (56.6, 64.8), 0)
 c("C50", "100n", "+5V", "GND", (56.6, 62.4), 0, fp=("Capacitor_SMD", "C_0603_1608Metric"))
+# pump line readback (GPIO35): open load, FET fault, and a 3-wire pump's status on its signal line
+r("R102", "56k", "PUMP_N", "PUMP_SENSE", (57.5, 40.3), 0)   # 56k/22k: 9 V line still reads high
+r("R103", "22k", "PUMP_SENSE", "GND", (57.5, 42.7), 0)
 
 # ---------------------------------------------------------------- analog island (sheet 4)
 part("U13", SOIC8, "ISO1540", "ISO1540DR",
@@ -337,8 +340,10 @@ part("RF4", R2512, "1k 1W fusible", "25121WF1001T4E 1k 1W 2512 (fusible preferre
 nodes = ["DIV_TOP", "TAP7", "TAP6", "TAP5", "TAP4", "TAP3", "TAP2", "TAP1", "DIV_BOT"]
 for i in range(8):
     y = 17.0 + i * 7.0
-    r(f"RD{2*i+1}", "47k", nodes[i], f"DIVM{i}", (98.5, y), 0, fp=R1206, mpn="47k 1206 0.1% 25ppm")
-    r(f"RD{2*i+2}", "47k", f"DIVM{i}", nodes[i + 1], (98.5, y + 3.5), 0, fp=R1206, mpn="47k 1206 0.1% 25ppm")
+    # 10k (v0.7: was 47k): 4.7x lower source impedance, so an unknown MCM tap input load shifts the blocks
+    # 4.7x less; 0.9 mA / 0.13 W at 142 V, 8 mW per resistor
+    r(f"RD{2*i+1}", "10k", nodes[i], f"DIVM{i}", (98.5, y), 0, fp=R1206, mpn="10k 1206 0.1% 25ppm")
+    r(f"RD{2*i+2}", "10k", f"DIVM{i}", nodes[i + 1], (98.5, y + 3.5), 0, fp=R1206, mpn="10k 1206 0.1% 25ppm")
 vhb = {"DIV_TOP": "VHB8", "TAP7": "VHB7", "TAP6": "VHB6", "TAP5": "VHB5", "TAP4": "VHB4", "TAP3": "VHB3",
        "TAP2": "VHB2", "TAP1": "VHB1", "DIV_BOT": "VHB0"}
 for i, nd in enumerate(nodes):
@@ -563,7 +568,7 @@ def build(path):
         t.SetTextThickness(pcbnew.FromMM(size * 0.15))
         board.Add(t)
     silk("HV <=150V DANGER", 104.0, 96.0, 1.5)
-    silk("ZE2 LiB MCM SPOOF v0.7", 96.0, 91.5, 1.0)
+    silk("ZE2 LiB MCM SPOOF v0.8", 96.0, 91.5, 1.0)
     silk("ANALOG ISLAND", 66.0, 2.0, 1.0)
     rect(90.5, 1.0, 119.0, 97.0, layer=pcbnew.F_SilkS, width=0.25)
 

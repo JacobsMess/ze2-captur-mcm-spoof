@@ -7,7 +7,7 @@ assembly only; fit it by hand to keep the order on Economic assembly.
 
 | Item | USD |
 |---|---|
-| Parts, one board (all lines) | 48.17 |
+| Parts, one board (all lines) | 48.01 |
 | Loading fees, Economic: 23 Extended SMT types x $3.07 | 71 |
 | Loading fees, Standard: 52 Basic + Extended SMT types x $1.53 | 80 |
 | THT connectors, 5 types (fit by hand) | - |

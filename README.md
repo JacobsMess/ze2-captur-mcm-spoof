@@ -10,7 +10,8 @@ inverter.
   <img src="docs/img/board_3d.png" width="80%" alt="The populated board, ray-traced render">
 </p>
 
-> **Status: untested design, v0.7.** No boards have been made. v0.6 and v0.7 fold in two design reviews. Several parts are placeholders (listed
+> **Status: untested design, v0.8.** No boards have been made. v0.6 and v0.7 fold in two design reviews; v0.8
+> lets the board measure or cope with the remaining unknowns itself. Several parts are placeholders (listed
 > [below](#before-ordering)). The BOM carries LCSC numbers, Basic or Preferred wherever JLC has one. The design was
 > produced with an AI assistant from my brief and is up for review ([feedback](#feedback) welcome).
 > Don't connect it to a pack on the strength of this README.
@@ -103,9 +104,9 @@ J3 overhangs the top edge with its wire entry facing out, and the USB-C face sit
 - Pinouts to check against datasheets: VND7050AJ (custom PowerSSO-16 footprint in `hw/lib`),
   TPS3431 and SN74LVC1G74 (watchdog latch), SN74LV1T34 (5 V gate buffers), AMC3311, AQY212GS,
   H24VNT2B, and the SMMS0630 inductor on the SRP7028A land pattern.
-- Measure the pump's stall current once it's chosen. The Captur coils are measured: main 22.8 ohm
-  (0.535 A at 12 V, pulls in at 5.5 V), precharge about 56 ohm (0.2 A, 6.8 V), so the coil path carries
-  under 0.8 A. Coil and pump copper is 1.0 mm where it fits, 0.75 mm or 0.5 mm in the tight spots.
+- The Captur coils are measured: main 22.8 ohm (0.535 A at 12 V, pulls in at 5.5 V), precharge about
+  56 ohm (0.2 A, 6.8 V), so the coil path carries under 0.8 A. Pump: any 12 V pump under about 3 A
+  (see [Pump](#pump)); nothing to measure before ordering.
 - Wire the pack as below (the coils have no internal diode, so driving them from the high side with the
   common pin 7 on the return is fine).
 - K4: beep-test a G6K-2F-Y before fitting. Pins 3/6 must be the commons (IMA side), 2/7 the
@@ -117,10 +118,29 @@ J3 overhangs the top edge with its wire entry facing out, and the USB-C face sit
 - J5 (USB-C): KiCad's footprint puts the peg holes 0.19 mm from pads A/B. Common on JLC boards, but check
   their NPTH-to-copper rule when ordering.
 - Check the Captur BMS protects both parallel strings in 34S2P.
-- Measure the stock car first: tap input impedance, NTC pull-ups, Hall sensor zero and scale, and a
-  SavvyCAN log of the IMA bus.
-- Trim `HV_DIV_X1000` in `firmware/main/config.h` against a meter on the pack: the bus-sense divider
-  uses 1 % Basic parts.
+- Nothing on the car or the pack needs measuring before ordering. What used to be on this list is now
+  handled by the board itself:
+  - NTC pull-ups: measured by the board at each start-up and trimmed by readback (only the Honda sensor's
+    curve is assumed; check it against the MCM's reported battery temperature in the first log).
+  - Tap input impedance: the tap ladder is 10k (0.13 W), so even a 1 Mohm MCM input shifts a block by
+    under 4 %. To check it anyway: ohms from each VHB pin to VHB0 at the MCM connector, MCM unplugged.
+  - Hall sensor zero and scale: not needed. SOC steering is closed-loop on the MCM's own SOC.
+  - IMA bus log: the board logs it in bypass mode (SavvyCAN over Wi-Fi), with nothing transmitted.
+  - Bus-sense divider: 1 % parts and a 92 % close check, so no meter trim is needed (`HV_DIV_X1000` is
+    there if you want one).
+
+### Pump
+
+Choose the pump later; the board handles the common kinds without changes, set in NVS (`pump_mode`):
+
+| Pump | Wiring on J2 | `pump_mode` |
+|---|---|---|
+| 2-wire, brushless (most cheap 12 V pumps, OEM inverter pumps) | + to 13, - to 14 | 0, on/off (default) |
+| 2-wire, brushed | + to 13, - to 14 | 1, PWM at 20 kHz |
+| 3-wire PWM (Bosch-style signal input) | + to 13, ground to a spare GND, signal to 14 | 2, signal at 100 Hz (`pump_hz`, `pump_inv`) |
+
+Keep it under about 3 A: F2 (5 A) also feeds the coils. The board reads the pump line back (R102/R103 to
+GPIO35), so it reports an open circuit, a failed Q3, or a 3-wire pump that isn't pulling its signal up.
 
 ### Captur LV connector to J2
 
@@ -168,7 +188,7 @@ with KiCad 7's Python (`pcbnew` importable).
 |---|---|
 | netlist + placement | `python3 build_board.py unrouted.kicad_pcb` (also writes `parts.json`) |
 | route | `python3 route.py unrouted.kicad_pcb routed.kicad_pcb`, then `finish.py` and `postfix.py` |
-| later changes (ECOs on the routed board) | `eco_v04_terminations.py`, `eco_v04_route.py`, `eco_v04_j3_slots.py`, `eco_v04_usb.py`, `eco_v05_jlc.py` (MCP2518FD, JLC part swaps), `eco_v06_review.py` (applies `parts.json`: used for v0.6 and v0.7), then `finish.py` for `WDT_OK`, `cleanup.py` (dangling copper) and `eco_v07_finish.py` (HV via nudge, wider coil copper) |
+| later changes (ECOs on the routed board) | `eco_v04_terminations.py`, `eco_v04_route.py`, `eco_v04_j3_slots.py`, `eco_v04_usb.py`, `eco_v05_jlc.py` (MCP2518FD, JLC part swaps), `eco_v06_review.py` (applies `parts.json`: used for v0.6-v0.8), then `finish.py` for `WDT_OK`, `cleanup.py` (dangling copper) and `eco_v07_finish.py` (HV via nudge, wider coil copper) |
 | silkscreen | `python3 tidy_silk.py routed.kicad_pcb tidy.kicad_pcb` |
 | planes, DRC, JLC files | `python3 fab.py tidy.kicad_pcb ze2-mcm-spoof.kicad_pcb out/jlc` (LCSC picks from `jlc_parts.py`) |
 | layer images | `python3 photo_render.py ze2-mcm-spoof.kicad_pcb ../docs/img/layers` |

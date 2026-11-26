@@ -14,7 +14,7 @@ board sits between the MCM and the new pack and makes the MCM believe it still h
 - **Stage 2 (later):** 68S, about 260 V, MCM removed, ZombieVerter VCU + Toyota inverter. The board is then
   only a CAN gateway; its HV side is not used.
 
-Status: v0.7, designed, simulated, not built. Two AI reviews have been folded in already (v0.6 and v0.7 in the git log). The designer is not an electronics engineer. The design was
+Status: v0.8, designed, simulated, not built. Two AI reviews have been folded in already (v0.6 and v0.7 in the git log). The designer is not an electronics engineer. The design was
 produced with an AI assistant, so assume nothing has been checked by a human expert.
 
 ## The board
@@ -29,7 +29,7 @@ ESP32-S3-WROOM-1 module, 4-layer, 120 x 98 mm, parts on top, made and assembled 
 | Bypass relay | K4 (DPDT) joins the two IMA halves whenever the board is unpowered or not ready | Omron G6K-2F-Y |
 | Switched terminations | 120 ohm at the board end of each split half, only while K4 is energised, each behind a solder jumper (open by default) | K4 spare contacts, AQY212GS photoMOS |
 | CAN4 | Dash bus tap, listen only in stage 1 | MCP2518FD + TJA1051 |
-| Cell taps | A 16-resistor divider across the real pack bus gives the MCM nine balanced "block" voltages. Two optoMOS connect it; unpowered = taps float = MCM faults safely | 47k 0.1 %, AQV214EH x2 |
+| Cell taps | A 16-resistor divider across the real pack bus gives the MCM nine balanced "block" voltages. Two optoMOS connect it; unpowered = taps float = MCM faults safely | 10k 0.1 %, AQV214EH x2 |
 | Bus sense | Isolated measurement of the pack bus voltage for precharge and weld checks | AMC3311 (isolated amplifier with its own isolated supply) |
 | Analog island | Fakes the three NTC temperature inputs and adds a small offset to the Hall current-sensor signal (steers the MCM's own SOC count). Runs from the MCM's 5 V sensor supply, I2C-isolated from the rest | MCP4728 DAC, MCP6004, ADS1115 x2, ISO1540 |
 | Contactor drive | Drives the Captur pack's precharge and main contactors and its BMS 12 V feed | VND7050AJ high-side x2 (one channel spare); low-side master FET driven by an enable latch through a 5 V gate buffer |
@@ -72,14 +72,17 @@ parts cross it (K2, K3, U12), with a short slot under each.
 - Not stocked at JLC (hand fit): AQV214EH x2, TPS3431, and the five THT connectors. AMC3311 stock is low.
 - Full-bus gaps (BUS_P side to the bus-negative side) are held to 0.7 mm by a DRC rule; IPC-2221 B2 asks
   0.6 mm uncoated at 101-150 V. Conformal coating planned.
-- Coil and pump currents are not yet measured; that copper is 1.0 mm where it fits, down to 0.5 mm.
+- Coils measured (< 0.8 A total). Pump not chosen: on/off, PWM or 3-wire signal by NVS setting, < 3 A,
+  with line readback for open circuit and Q3 failure.
 - The Captur BMS protocol is decoded (0x0F5 keep-alive, UDS reads; see `firmware/main/captur.h`); its current
   reading isn't. The Honda IMA IDs and SOC decode are placeholders until logged.
 - The Captur has two contactors (main+ and precharge, negative hard-wired). Coils measured: main 22.8 ohm,
   0.535 A at 12 V; precharge about 56 ohm, 0.2 A; no internal diodes.
-- Unknowns about the car: MCM tap input impedance and timing, NTC pull-ups, Hall sensor zero and scale,
+- The board measures the MCM's NTC input circuit itself and trims by readback; only the Honda sensor curve
+  is assumed. The 10k tap ladder keeps the tap error small whatever the MCM's input impedance.
+- Unknowns about the car: MCM tap timing, the Honda NTC curve,
   IMA bus load and terminations. These get measured before anything is connected.
-- The bus-sense divider uses 1 % parts; its ratio is trimmed in firmware (`HV_DIV_X1000`).
+- The bus-sense divider uses 1 % parts; the close check (92 %) allows for it untrimmed.
 - Firmware has only run in simulation (ESP32-S3 QEMU with modelled CAN controllers): no frames lost at
   realistic loads, CAN core 22-70 %; at the edge with every bus saturated on the slow CPU model.
 

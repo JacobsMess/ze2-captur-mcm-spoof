@@ -26,7 +26,9 @@ typedef enum { OUT_HS_PRE, OUT_HS_MAINP, OUT_HS_MAINN, OUT_HS_BMS, OUT_MCU_EN, O
                OUT_RELAY_SPLIT, OUT_COUNT } hal_out_t;
 void hal_out(hal_out_t o, bool on);
 bool hal_vbat_mv(int32_t *mv);                    // board supply (VBAT_P); false: ADC read failed
-void hal_pump_pwm(float duty);                    // 0..1
+void hal_pump_config(uint32_t hz);                // pump PWM frequency
+void hal_pump_pwm(float duty);                    // 0..1: fraction of time Q3 is on
+bool hal_pump_line_high(void);                    // PUMP_N above about 9 V (GPIO35 via R102/R103)
 
 // analog
 bool hal_dac_write4(const uint16_t code[4]);     // MCP4728, 12-bit codes, Vref = MCM 5 V

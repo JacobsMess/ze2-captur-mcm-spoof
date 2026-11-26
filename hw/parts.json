@@ -644,7 +644,7 @@
    "25": "SPI_CS4",
    "26": "NC_IO45",
    "27": "BOOT",
-   "28": "NC_IO35",
+   "28": "PUMP_SENSE",
    "29": "NC_IO36",
    "30": "NC_IO37",
    "31": "CAN2_INT",
@@ -2432,6 +2432,42 @@
   "rot": 0,
   "note": ""
  },
+ "R102": {
+  "fp": [
+   "Resistor_SMD",
+   "R_0805_2012Metric"
+  ],
+  "val": "56k",
+  "mpn": "56k 0805 1%",
+  "nets": {
+   "1": "PUMP_N",
+   "2": "PUMP_SENSE"
+  },
+  "pos": [
+   57.5,
+   40.3
+  ],
+  "rot": 0,
+  "note": ""
+ },
+ "R103": {
+  "fp": [
+   "Resistor_SMD",
+   "R_0805_2012Metric"
+  ],
+  "val": "22k",
+  "mpn": "22k 0805 1%",
+  "nets": {
+   "1": "PUMP_SENSE",
+   "2": "GND"
+  },
+  "pos": [
+   57.5,
+   42.7
+  ],
+  "rot": 0,
+  "note": ""
+ },
  "U13": {
   "fp": [
    "Package_SO",
@@ -3401,8 +3437,8 @@
    "Resistor_SMD",
    "R_1206_3216Metric"
   ],
-  "val": "47k",
-  "mpn": "47k 1206 0.1% 25ppm",
+  "val": "10k",
+  "mpn": "10k 1206 0.1% 25ppm",
   "nets": {
    "1": "DIV_TOP",
    "2": "DIVM0"
@@ -3419,8 +3455,8 @@
    "Resistor_SMD",
    "R_1206_3216Metric"
   ],
-  "val": "47k",
-  "mpn": "47k 1206 0.1% 25ppm",
+  "val": "10k",
+  "mpn": "10k 1206 0.1% 25ppm",
   "nets": {
    "1": "DIVM0",
    "2": "TAP7"
@@ -3437,8 +3473,8 @@
    "Resistor_SMD",
    "R_1206_3216Metric"
   ],
-  "val": "47k",
-  "mpn": "47k 1206 0.1% 25ppm",
+  "val": "10k",
+  "mpn": "10k 1206 0.1% 25ppm",
   "nets": {
    "1": "TAP7",
    "2": "DIVM1"
@@ -3455,8 +3491,8 @@
    "Resistor_SMD",
    "R_1206_3216Metric"
   ],
-  "val": "47k",
-  "mpn": "47k 1206 0.1% 25ppm",
+  "val": "10k",
+  "mpn": "10k 1206 0.1% 25ppm",
   "nets": {
    "1": "DIVM1",
    "2": "TAP6"
@@ -3473,8 +3509,8 @@
    "Resistor_SMD",
    "R_1206_3216Metric"
   ],
-  "val": "47k",
-  "mpn": "47k 1206 0.1% 25ppm",
+  "val": "10k",
+  "mpn": "10k 1206 0.1% 25ppm",
   "nets": {
    "1": "TAP6",
    "2": "DIVM2"
@@ -3491,8 +3527,8 @@
    "Resistor_SMD",
    "R_1206_3216Metric"
   ],
-  "val": "47k",
-  "mpn": "47k 1206 0.1% 25ppm",
+  "val": "10k",
+  "mpn": "10k 1206 0.1% 25ppm",
   "nets": {
    "1": "DIVM2",
    "2": "TAP5"
@@ -3509,8 +3545,8 @@
    "Resistor_SMD",
    "R_1206_3216Metric"
   ],
-  "val": "47k",
-  "mpn": "47k 1206 0.1% 25ppm",
+  "val": "10k",
+  "mpn": "10k 1206 0.1% 25ppm",
   "nets": {
    "1": "TAP5",
    "2": "DIVM3"
@@ -3527,8 +3563,8 @@
    "Resistor_SMD",
    "R_1206_3216Metric"
   ],
-  "val": "47k",
-  "mpn": "47k 1206 0.1% 25ppm",
+  "val": "10k",
+  "mpn": "10k 1206 0.1% 25ppm",
   "nets": {
    "1": "DIVM3",
    "2": "TAP4"
@@ -3545,8 +3581,8 @@
    "Resistor_SMD",
    "R_1206_3216Metric"
   ],
-  "val": "47k",
-  "mpn": "47k 1206 0.1% 25ppm",
+  "val": "10k",
+  "mpn": "10k 1206 0.1% 25ppm",
   "nets": {
    "1": "TAP4",
    "2": "DIVM4"
@@ -3563,8 +3599,8 @@
    "Resistor_SMD",
    "R_1206_3216Metric"
   ],
-  "val": "47k",
-  "mpn": "47k 1206 0.1% 25ppm",
+  "val": "10k",
+  "mpn": "10k 1206 0.1% 25ppm",
   "nets": {
    "1": "DIVM4",
    "2": "TAP3"
@@ -3581,8 +3617,8 @@
    "Resistor_SMD",
    "R_1206_3216Metric"
   ],
-  "val": "47k",
-  "mpn": "47k 1206 0.1% 25ppm",
+  "val": "10k",
+  "mpn": "10k 1206 0.1% 25ppm",
   "nets": {
    "1": "TAP3",
    "2": "DIVM5"
@@ -3599,8 +3635,8 @@
    "Resistor_SMD",
    "R_1206_3216Metric"
   ],
-  "val": "47k",
-  "mpn": "47k 1206 0.1% 25ppm",
+  "val": "10k",
+  "mpn": "10k 1206 0.1% 25ppm",
   "nets": {
    "1": "DIVM5",
    "2": "TAP2"
@@ -3617,8 +3653,8 @@
    "Resistor_SMD",
    "R_1206_3216Metric"
   ],
-  "val": "47k",
-  "mpn": "47k 1206 0.1% 25ppm",
+  "val": "10k",
+  "mpn": "10k 1206 0.1% 25ppm",
   "nets": {
    "1": "TAP2",
    "2": "DIVM6"
@@ -3635,8 +3671,8 @@
    "Resistor_SMD",
    "R_1206_3216Metric"
   ],
-  "val": "47k",
-  "mpn": "47k 1206 0.1% 25ppm",
+  "val": "10k",
+  "mpn": "10k 1206 0.1% 25ppm",
   "nets": {
    "1": "DIVM6",
    "2": "TAP1"
@@ -3653,8 +3689,8 @@
    "Resistor_SMD",
    "R_1206_3216Metric"
   ],
-  "val": "47k",
-  "mpn": "47k 1206 0.1% 25ppm",
+  "val": "10k",
+  "mpn": "10k 1206 0.1% 25ppm",
   "nets": {
    "1": "TAP1",
    "2": "DIVM7"
@@ -3671,8 +3707,8 @@
    "Resistor_SMD",
    "R_1206_3216Metric"
   ],
-  "val": "47k",
-  "mpn": "47k 1206 0.1% 25ppm",
+  "val": "10k",
+  "mpn": "10k 1206 0.1% 25ppm",
   "nets": {
    "1": "DIVM7",
    "2": "DIV_BOT"

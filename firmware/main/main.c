@@ -17,6 +17,7 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "ota.h"
+#include "pump.h"
 #include "safety.h"
 #include "sdkconfig.h"
 #include "sim.h"
@@ -29,6 +30,7 @@ static const char *TAG = "main";
 typedef struct {
     uint8_t stage;        // 1: MCM kept and spoofed; 2: MCM removed, ZombieVerter
     bool mitm;            // allow the gateway to split the IMA bus (off until the rewrite rules are proven)
+    pump_cfg_t pump;      // pump.h: pump_mode, pump_hz, pump_inv
 } cfg_t;
 
 static cfg_t load_cfg(void)
@@ -39,6 +41,10 @@ static cfg_t load_cfg(void)
         uint8_t v;
         if (nvs_get_u8(h, "stage", &v) == ESP_OK) c.stage = v;
         if (nvs_get_u8(h, "mitm", &v) == ESP_OK) c.mitm = v;
+        if (nvs_get_u8(h, "pump_mode", &v) == ESP_OK && v <= PUMP_SIGNAL) c.pump.mode = (pump_mode_t)v;
+        if (nvs_get_u8(h, "pump_inv", &v) == ESP_OK) c.pump.invert = v;
+        uint32_t hz;
+        if (nvs_get_u32(h, "pump_hz", &hz) == ESP_OK) c.pump.hz = hz;
         nvs_close(h);
     }
     return c;
@@ -65,7 +71,7 @@ static void control_task(void *arg)
         captur_tick(now);
         zombie_tick(now, cfg.stage == 2);
         gateway_tick(now, ign && cfg.mitm);
-        hal_pump_pwm(ign ? (g_pack.temp_max_c > 35 ? 1.0f : 0.4f) : 0);
+        pump_tick(now, ign ? (g_pack.temp_max_c > 35 ? 1.0f : 0.4f) : 0);
         ota_tick(now, can_io_healthy());
         vTaskDelayUntil(&wake, pdMS_TO_TICKS(CONTROL_PERIOD_MS));
     }
@@ -86,6 +92,7 @@ void app_main(void)
     captur_set_series(cfg.stage == 2 ? 2 * PACK_SERIES : PACK_SERIES);
     gateway_init();
     contactors_init();
+    pump_init(cfg.pump);
 #if CONFIG_ZE2_SIM
     sim_start();                  // models must exist before the drivers talk to them
 #endif

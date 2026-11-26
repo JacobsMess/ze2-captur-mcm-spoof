@@ -46,7 +46,9 @@ void hal_out(hal_out_t o, bool on)
 }
 
 bool hal_vbat_mv(int32_t *mv) { *mv = 13800; return true; }
+void hal_pump_config(uint32_t hz) {}
 void hal_pump_pwm(float duty) {}
+bool hal_pump_line_high(void) { return true; }
 
 bool hal_dac_write4(const uint16_t code[4])
 {

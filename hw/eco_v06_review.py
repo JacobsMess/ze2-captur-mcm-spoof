@@ -71,6 +71,7 @@ set_slots(b)
 
 
 boxes, swapped, repinned = [], [], set()  # boxes: (box, nets of the old and new pads, ref)
+changed = {}  # re-pinned only (not moved or re-footprinted): ref -> nets whose pins changed
 for fp in list(b.GetFootprints()):               # parts that left the design
     ref = fp.GetReference()
     if ref not in parts and not ref.startswith("H"):
@@ -96,6 +97,9 @@ for ref, p in parts.items():
             own = set(have.values()) | set(want.values())
             if have != want:
                 repinned.add(ref)
+            if str(fp.GetFPID().GetLibItemName()) == name and not moved:
+                changed[ref] = {n for k in set(have) | set(want) if have.get(k) != want.get(k)
+                                for n in (have.get(k), want.get(k)) if n}
             if str(fp.GetFPID().GetLibItemName()) != name or moved:
                 b.Delete(fp)
                 fp = new_fp(ref, p)
@@ -132,7 +136,7 @@ def new_pad_boxes(ref, grow):
 
 # signal nets of re-pinned ICs, the relay and the moved crystals are ripped whole and routed fresh
 _KEEP = ("+3V3", "+5V", "VCOIL", "VBAT_P", "COIL_", "BMS12V", "BUS_", "HV", "DIV", "TAP", "SNS", "SENSE_MID", "PUMP_N")
-FULL = {n for bx, own, ref in boxes if ref[0] in "UKY" for n in own
+FULL = {n for bx, own, ref in boxes if ref[0] in "UKY" for n in changed.get(ref, own)
         if n not in PLANE and not n.startswith(_KEEP)}
 # rip (a) the footprint's own nets inside its box, (b) any other net's copper that now crowds a new pad
 ripped, kill = set(), []
@@ -146,6 +150,8 @@ for t in b.GetTracks():
     if nn in FULL:
         kill.append(t); continue
     for bx, own, ref in boxes:
+        if ref in changed:   # pads didn't move: only the re-pinned nets' copper goes (already in FULL)
+            continue
         if nn in own and (any(inbox(q, bx) for q in pts) or top and seg_hits_box(pts[0], pts[1], bx)):
             kill.append(t); break
         grow = half + (0.65 if bx[0] > OX + 85 else 0.2)  # HV strip: 0.6 mm HV clearance
@@ -246,8 +252,9 @@ for nn in sorted(FULL, key=lambda n: len(R.pads_by_net.get(n, []))):
     if len(R.pads_by_net.get(nn, [])) > 1:
         R.route_net(nn, tracks, vias, failed)
         print("routed", nn)
-join = sorted((ripped | {pd.GetNetname() for ref in swapped for pd in R.board.FindFootprintByReference(ref).Pads()})
-              - PLANE - FULL - {""})
+join = sorted((ripped | {pd.GetNetname() for ref in swapped if ref not in changed
+                         for pd in R.board.FindFootprintByReference(ref).Pads()}
+               | {n for ref in changed for n in changed[ref]}) - PLANE - FULL - {""})
 # short nets first (crystal, INT, CS, TX/RX), shared buses last so they route around the locals
 join.sort(key=lambda n: len(R.pads_by_net.get(n, [])))
 for nn in join:

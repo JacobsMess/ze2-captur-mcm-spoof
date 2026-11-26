@@ -52,7 +52,7 @@ def test_every_bom_line_has_an_lcsc_number_or_is_flagged():
 def test_passives_use_basic_or_preferred_parts():
     # only the matched 0.1 % tap ladder, the 2512 HV series resistors and parts with no basic
     # equivalent at JLC (crystal, PTCs, power inductor) may add extended-part fees
-    allowed = {"C2828891", "C54315", "C9010", "C960026", "C19078763", "C128694"}
+    allowed = {"C406729", "C54315", "C9010", "C960026", "C19078763", "C128694"}
     for r in rows("bom.csv"):
         if r["Footprint"].startswith(("R_", "C_")) or r["LCSC Part #"] in allowed:
             assert r["Class"] in ("B", "P") or r["LCSC Part #"] in allowed, (r["Designator"], r["LCSC Part #"])

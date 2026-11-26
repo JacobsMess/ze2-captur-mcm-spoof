@@ -103,10 +103,10 @@ void board_hal_init(void)
         s_cali = NULL;
     }
 
-    // coolant pump PWM, 1 kHz
-    ledc_timer_config_t lt = {.speed_mode = LEDC_LOW_SPEED_MODE, .duty_resolution = LEDC_TIMER_10_BIT,
-                              .timer_num = LEDC_TIMER_0, .freq_hz = 1000, .clk_cfg = LEDC_AUTO_CLK};
-    ledc_timer_config(&lt);
+    // coolant pump: PWM to U24/Q3 (frequency set by pump_init), line readback on GPIO35
+    gpio_config_t ps = {.pin_bit_mask = 1ULL << PIN_PUMP_SENSE, .mode = GPIO_MODE_INPUT};
+    gpio_config(&ps);
+    hal_pump_config(PUMP_PWM_HZ);
     ledc_channel_config_t lc = {.gpio_num = PIN_PUMP_PWM, .speed_mode = LEDC_LOW_SPEED_MODE,
                                 .channel = LEDC_CHANNEL_0, .timer_sel = LEDC_TIMER_0, .duty = 0};
     ledc_channel_config(&lc);
@@ -143,6 +143,15 @@ bool hal_twai_send(const can_frame_t *f)
 bool hal_twai_ok(void) { return s_twai_ok; }
 
 void hal_out(hal_out_t o, bool on) { gpio_set_level(OUT_PIN[o], on); }
+
+void hal_pump_config(uint32_t hz)
+{
+    ledc_timer_config_t lt = {.speed_mode = LEDC_LOW_SPEED_MODE, .duty_resolution = LEDC_TIMER_10_BIT,
+                              .timer_num = LEDC_TIMER_0, .freq_hz = hz, .clk_cfg = LEDC_AUTO_CLK};
+    if (ledc_timer_config(&lt) != ESP_OK) ESP_LOGE(TAG, "pump PWM %lu Hz not possible", (unsigned long)hz);
+}
+
+bool hal_pump_line_high(void) { return gpio_get_level(PIN_PUMP_SENSE); }
 
 void hal_pump_pwm(float duty)
 {

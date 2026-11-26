@@ -38,6 +38,11 @@ they're decoded from logs.
   extreme cells (3 % + 2 V), a cell or temperature hard limit, or any contactor fault: hard trip, held
   until key-off. A soft trip floats the taps and keeps a closed pack closed but never starts a close.
   Below 5 °C or near full, regen is inhibited by steering the MCM's SOC; near empty, assist is.
+- **Pump (`pump.c`):** on/off (default), PWM at 20 kHz or a 3-wire pump's signal line, set in NVS
+  (`pump_mode`, `pump_hz`, `pump_inv`). The line readback reports an open circuit or a failed Q3.
+- **NTC lines (`spoof.c`):** at start-up each line is driven to 2 V and 3 V and read back, which gives the
+  MCM's pull-up (ohms and volts); the line is then set to the voltage that means the wanted temperature
+  through that pull-up, and the readback trims each line continuously. Shown on the status page.
 - **Decoder:** replies need the 29-bit response ID, no RTR, a positive 0x62 reply and the ISO-TP length and
   DLC for that DID.
 - **OTA:** accepted only with ignition off and the contactors open. Two app slots (3.75 MB each, the
@@ -54,7 +59,8 @@ sim/run_sim.sh                           # simulation build + QEMU runs + report
 python3 -m pytest tests/test_host_control.py   # from the repo root: safety chain on the PC
 ```
 
-`tests/host/control_test.c` compiles `captur.c`, `safety.c`, `contactors.c`, `ignition.c`, `control.c` and
+`tests/host/peripheral_test.c` checks the pump modes and readback and the NTC fit and trim against a
+modelled MCM input. `tests/host/control_test.c` compiles `captur.c`, `safety.c`, `contactors.c`, `ignition.c`, `control.c` and
 `zombie.c` with gcc against a model of the Captur contactors (with optional welded poles), the U10/U11 latch
 and the bus sense, and runs 14 scenarios: normal close, stale or partial BMS data, a live link while open,
 soft trip before start and while closed, a cell sum disagreeing with the extreme cells, welded main+ and
