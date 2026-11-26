@@ -5,10 +5,13 @@ usage: python3 report.py qemu_shift2.log qemu_shift3.log > report.md
 import json
 import re
 import sys
+from pathlib import Path
 
 SPEED = {"2": "250 MIPS (IPC ~1.0)", "3": "125 MIPS (IPC ~0.5)"}
 SCENARIOS = 3
-CT_CLOSED = 5     # contactors.h: the sim BMS is healthy, so the sequencer must finish closed
+# the sim BMS is healthy, so the sequencer must finish closed (value read from contactors.h)
+_CT = re.search(r"typedef enum \{([^}]*)\} ct_state_t", (Path(__file__).resolve().parents[1] / "main" / "contactors.h").read_text())
+CT_CLOSED = [s.strip() for s in _CT.group(1).split(",")].index("CT_CLOSED")
 
 
 def load(path):

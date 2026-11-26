@@ -16,5 +16,6 @@ void sim_start(void);                      // runs every scenario and prints SIM
 void sim_model_spi(int chip, const uint8_t *tx, uint8_t *rx, size_t len);
 bool sim_model_int(int chip);
 bool sim_twai_pop(can_frame_t *f);
+void sim_twai_tx(const can_frame_t *f);    // frames the firmware sends on CAN1 (the BMS model answers)
 void sim_set_can_task(void *t);
 extern bool g_sim_relay_split;

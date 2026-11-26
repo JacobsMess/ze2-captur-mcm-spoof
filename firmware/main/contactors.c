@@ -21,16 +21,16 @@ static void master_enable(bool on)
     s_wdi = true;
 }
 
-static void drive(bool neg, bool pre, bool pos)
+static void drive(bool pre, bool pos)
 {
-    hal_out(OUT_HS_MAINN, neg);
     hal_out(OUT_HS_PRE, pre);
     hal_out(OUT_HS_MAINP, pos);
 }
 
 static void all_open(void)
 {
-    drive(false, false, false);
+    drive(false, false);
+    hal_out(OUT_HS_MAINN, false);   // spare channel: no main- contactor on the Captur
     master_enable(false);
 }
 
@@ -96,28 +96,15 @@ void contactors_tick(uint32_t now_ms, bool want_closed, bool may_start)
     case CT_OPEN:
         if (!want_closed || !may_start || !g_pack.valid) break;
         if (!bus_ok) { fault("bus voltage sense invalid"); break; }
-        if (bus_mv > DEAD_BUS_MV) { fault("bus live with contactors open (weld?)"); break; }
+        // pack negative is hard-wired, so a live link with both coils off means main+ or precharge is welded
+        if (bus_mv > DEAD_BUS_MV) { fault("link live with contactors open: main+ or precharge welded"); break; }
         master_enable(true);
-        drive(false, true, false);            // precharge alone: a live bus now means main- is welded
-        enter(CT_CHECK_NEG, now_ms);
-        break;
-    case CT_CHECK_NEG:
-        if (bus_mv > DEAD_BUS_MV) { fault("main- welded"); break; }
-        if (dt >= WELD_CHECK_MS) {
-            drive(true, false, false);        // main- alone: a live bus now means main+ or precharge is welded
-            enter(CT_CHECK_POS, now_ms);
-        }
-        break;
-    case CT_CHECK_POS:
-        if (bus_mv > DEAD_BUS_MV) { fault("main+ or precharge welded"); break; }
-        if (dt >= WELD_CHECK_MS) {
-            drive(true, true, false);
-            enter(CT_PRECHARGE, now_ms);
-        }
+        drive(true, false);
+        enter(CT_PRECHARGE, now_ms);
         break;
     case CT_PRECHARGE:
         if ((uint64_t)bus_mv * 100 >= pack_mv * PRECHARGE_PCT && pack_mv > 0) {
-            drive(true, true, true);          // main+ closes with precharge still holding the bus up
+            drive(true, true);                // main+ closes with precharge still holding the link up
             ESP_LOGI(TAG, "precharged in %lu ms", (unsigned long)dt);
             enter(CT_CLOSING, now_ms);
         } else if (dt > PRECHARGE_TIMEOUT_MS) {
@@ -125,7 +112,7 @@ void contactors_tick(uint32_t now_ms, bool want_closed, bool may_start)
         }
         break;
     case CT_CLOSING:
-        if (dt >= MAIN_PICKUP_MS) drive(true, false, true);   // main+ has had time to pick up: drop precharge
+        if (dt >= MAIN_PICKUP_MS) drive(false, true);   // main+ has had time to pick up: drop precharge
         if (dt >= MAIN_PICKUP_MS + CLOSE_VERIFY_MS) {
             if ((uint64_t)bus_mv * 100 < pack_mv * CLOSED_MIN_PCT) { fault("main+ did not close"); break; }
             enter(CT_CLOSED, now_ms);

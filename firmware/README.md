@@ -1,7 +1,8 @@
 # Firmware
 
 ESP-IDF v5.4 firmware for the ESP32-S3-WROOM-1-N8R2. It builds cleanly. It has **not run on a board
-yet**, and the Honda and Captur CAN IDs are placeholders until they're decoded from logs.
+yet**. The Captur BMS protocol is the one decoded on the bench; the Honda IMA IDs are placeholders until
+they're decoded from logs.
 
 ## What it does
 
@@ -18,8 +19,14 @@ yet**, and the Honda and Captur CAN IDs are placeholders until they're decoded f
   unchanged.
 - **Ignition:** the board supply (after D7) on the ADC: on above 9 V for 100 ms, off below 6 V for 2 s, so
   a crank dip is not a key-off. Key-off is the only thing that clears a latched trip or contactor fault.
-- **Contactors (`contactors.c`):** weld check of each pole (precharge alone, then main- alone: the link must
-  stay dead), precharge to 90 %, main+ with precharge held 100 ms, then the link must reach 95 % of the pack.
+- **Captur BMS (`captur.c`):** 0x0F5 keep-alive every 20 ms (`7D`, counter, CRC-8 poly 0x1D init 0xC4, `FF D7
+  F8 00 D0`) and one UDS read every 20 ms on 0x18DADBF1 / 0x18DAF1DB, round-robin over 9007/9009 (max/min
+  cell), 9006 (cell sum), 9013/9014 (min/max temperature), 9001 (SOC) and 9005 (pack voltage, logged only).
+  Read-only service 0x22 only. Current (900D) has no known scale yet, so it isn't used.
+- **Contactors (`contactors.c`):** main+ and precharge (pack negative is hard-wired; the board's third high
+  side is a spare that stays off). The link must be dead with both coils off (rules out a weld), then
+  precharge to 90 % of the series string (cell sum x 34/68 in stage 1), main+ with precharge held 100 ms,
+  then the link must reach 95 %.
   Any fault (weld, bus sense invalid, precharge timeout, main+ not closed, link collapse, a control-loop
   stall) is latched and is a hard trip, so the taps float too. Stage 2 never runs the sequencer.
 - **Watchdog latch:** every kick clocks MCU_EN into U10. A gap over 600 ms between loop passes with coils
@@ -27,15 +34,16 @@ yet**, and the Honda and Captur CAN IDs are placeholders until they're decoded f
 - **Bus sense:** a reading counts only if both ADC reads and calibration work, the AMC3311 output common
   mode is in range and the differential is not negative (its fail-safe output). No close without a valid
   dead-link reading.
-- **Protection:** BMS silent for 500 ms (each frame group timed from its arrival), pack voltage outside
-  34 x the cell range (3 % + 2 V), a cell or temperature hard limit, or any contactor fault: hard trip, held
+- **Protection:** any BMS value older than 1 s (each timed from its arrival; normally under 150 ms), cell sum outside 68 x the
+  extreme cells (3 % + 2 V), a cell or temperature hard limit, or any contactor fault: hard trip, held
   until key-off. A soft trip floats the taps and keeps a closed pack closed but never starts a close.
   Below 5 °C or near full, regen is inhibited by steering the MCM's SOC; near empty, assist is.
-- **Decoder:** frames need a standard ID, no RTR and the minimum DLC for their layout.
+- **Decoder:** replies need the 29-bit response ID, no RTR, a positive 0x62 reply and the ISO-TP length and
+  DLC for that DID.
 - **OTA:** accepted only with ignition off and the contactors open. Two app slots (3.75 MB each, the
   image is 0.85 MB). A new image runs on probation and is rolled back automatically unless it comes up
   with all three CAN controllers and the TWAI working and no SPI errors.
-- **Placeholders (`main/config.h`, `captur.c`, `gateway.c`):** Captur frame IDs and layouts, the Honda SOC
+- **Placeholders (`main/config.h`, `gateway.c`):** the Honda SOC
   frame, the Honda NTC curve and pull-up, and the ZombieVerter BMS frame format.
 
 ## Build
@@ -49,7 +57,8 @@ python3 -m pytest tests/test_host_control.py   # from the repo root: safety chai
 `tests/host/control_test.c` compiles `captur.c`, `safety.c`, `contactors.c`, `ignition.c`, `control.c` and
 `zombie.c` with gcc against a model of the Captur contactors (with optional welded poles), the U10/U11 latch
 and the bus sense, and runs 14 scenarios: normal close, stale or partial BMS data, a live link while open,
-soft trip before start and while closed, pack voltage disagreeing with the cells, welded main- and main+,
+soft trip before start and while closed, a cell sum disagreeing with the extreme cells, welded main+ and
+precharge,
 sense invalid or lost, a 2 s loop stall and resume, a crank dip, and the decoder's frame checks.
 
 ## Simulation: is the S3 up to it?
@@ -64,6 +73,9 @@ MCP2518FD driver, gateway, GVRET encoder, control loop.
 - Each bus gets 8-byte frames at a set share of 500 kbit/s. All four run at once, everything is streamed
   over GVRET, and the IMA bus is split with every frame forwarded.
 
+The Captur BMS is modelled too: it answers the firmware's UDS reads, so the keep-alive, polling and
+contactor sequence run end to end (the report fails unless the contactors finish closed in every run).
+
 It runs on Espressif's ESP32-S3 QEMU with instruction counting at two CPU speeds:
 - **250 MIPS:** about one instruction per clock at 240 MHz (optimistic);
 - **125 MIPS:** about one per two clocks, allowing for cache and flash stalls (pessimistic).
@@ -72,16 +84,16 @@ The full results are in [`sim/out/report.md`](sim/out/report.md) and the raw log
 
 | Scenario | Core 0 / core 1 load | SPI bus busy | IMA forward latency (avg) | Frames lost |
 |---|---|---|---|---|
-| Typical: EV 30 %, IMA 40 %, dash 30 % | 18-28 % / 22-44 % | 18-28 % | 92-161 µs | 0 |
-| Busy: 60 / 70 / 60 % | 28-37 % / 41-70 % | 34-50 % | 100-177 µs | 0 |
-| Worst case: all four buses 100 % | 38-42 % / 63-92 % | 49-73 % | 119-275 µs | 0 (8 in one run, see below) |
+| Typical: EV 30 %, IMA 40 %, dash 30 % | 18-27 % / 22-44 % | 18-28 % | 92-162 µs | 0 |
+| Busy: 60 / 70 / 60 % | 28-38 % / 41-71 % | 33-50 % | 93-167 µs | 0 |
+| Worst case: all four buses 100 % | 36-42 % / 62-93 % | 51-73 % | 99-266 µs | 0 (8 in one earlier run, see below) |
 
 The first figure in each range is the 250 MIPS run, the second the 125 MIPS run. The SavvyCAN stream
 peaks at 0.32 MB/s (2.5 Mbit/s). ESP-IDF's Wi-Fi guide gives the S3 up to 20 Mbit/s TCP throughput.
 
 **Conclusions:**
 - **No frames lost at realistic loads.** With every bus saturated on the slow CPU model core 1 runs at
-  92 %, which is the edge: one of two otherwise identical v0.7 runs lost 8 of about 480,000 frames there.
+  92-93 %, which is the edge: one v0.7 run lost 8 of about 480,000 frames there; the others lost none.
 - **No frames lost, even with every bus saturated, on the fast model.** The v0.4 board's MCP2515s (two-frame receive
   buffer) lost up to 0.4 % of IMA and 5 % of dash frames in the same runs. Each MCP2518FD buffers 32
   frames, which rides out QEMU's 0.5 ms core freezes and any real stall of the same size.

@@ -17,16 +17,17 @@ def binary(tmp_path_factory):
     if not shutil.which("gcc"):
         pytest.skip("gcc not installed")
     exe = tmp_path_factory.mktemp("host") / "control_test"
-    cmd = ["gcc", "-std=gnu11", "-Wall", "-Werror", "-O1", "-DCONFIG_ZE2_SIM=1",   # sim build's CAN ID layouts
-           f"-I{HOST / 'stub'}", f"-I{MAIN}", "-o", str(exe), str(HOST / "control_test.c")]
+    cmd = ["gcc", "-std=gnu11", "-Wall", "-Werror", "-O1", f"-I{HOST / 'stub'}", f"-I{MAIN}", "-o", str(exe),
+           str(HOST / "control_test.c")]
     cmd += [str(MAIN / s) for s in SRCS]
     subprocess.run(cmd, check=True, capture_output=True, text=True)
     return exe
 
 
 SCENARIOS = ["normal_close", "only_cells", "stale_groups_stage2", "live_link_while_open", "soft_trip_before_start",
-             "soft_trip_while_closed", "pack_disagrees_with_cells", "welded_neg", "welded_pos", "sense_invalid",
-             "sense_lost_while_closed", "stall_and_resume", "crank_dip_keeps_trip", "decoder_checks"]
+             "soft_trip_while_closed", "pack_disagrees_with_cells", "welded_pos", "welded_pre", "sense_invalid",
+             "sense_lost_while_closed", "stall_and_resume", "crank_dip_keeps_trip", "decoder_checks",
+             "keepalive_frames"]
 
 
 def test_scenario_list_is_complete(binary):

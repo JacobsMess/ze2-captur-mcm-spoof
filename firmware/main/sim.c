@@ -201,6 +201,30 @@ static uint32_t s_twai_overflow;
 
 bool sim_twai_pop(can_frame_t *f) { return s_twai_q && xQueueReceive(s_twai_q, f, 0) == pdTRUE; }
 
+// Captur BMS model: answers UDS 22 reads with a healthy 34S2P pack, 68 cells at 3.68-3.71 V (1/1024 V units),
+// 18-22 C, SOC 62 %
+void sim_twai_tx(const can_frame_t *q)
+{
+    if (!s_twai_q || !q->ext || q->id != CAPTUR_UDS_REQ || q->data[0] != 3 || q->data[1] != 0x22) return;
+    uint16_t did = q->data[2] << 8 | q->data[3];
+    uint32_t v;
+    int len = 2;
+    switch (did) {
+    case 0x9007: v = 3710 * 1024 / 1000; break;
+    case 0x9009: v = 3680 * 1024 / 1000; break;
+    case 0x9006: v = 68ull * 3695 * 1024 / 1000; len = 4; break;
+    case 0x9013: v = (18 + 40) * 16; break;
+    case 0x9014: v = (22 + 40) * 16; break;
+    case 0x9001: v = 6200 + 300; break;
+    case 0x9005: v = 2513; break;
+    default: return;
+    }
+    can_frame_t r = {.id = CAPTUR_UDS_RESP, .ext = 1, .dlc = 8, .bus = BUS_EV, .ts_us = (uint32_t)esp_timer_get_time(),
+                     .data = {(uint8_t)(3 + len), 0x62, q->data[2], q->data[3], 0xAA, 0xAA, 0xAA, 0xAA}};
+    for (int i = 0; i < len; i++) r.data[4 + i] = (uint8_t)(v >> (8 * (len - 1 - i)));
+    if (xQueueSend(s_twai_q, &r, 0) != pdTRUE) s_twai_overflow++;
+}
+
 void sim_set_can_task(void *t) { s_can_task = t; }
 
 // ------------------------------------------------------------------ traffic
@@ -218,21 +242,12 @@ static void IRAM_ATTR bus_tick(void *arg)
     BaseType_t woken = pdFALSE;
     s_ticks++;
     for (int c = 0; c < MCP_COUNT; c++) tx_progress(c, &woken);
-    // EV bus (TWAI): the Captur frames at 100 Hz each, the rest filler
+    // EV bus (TWAI): filler traffic; the Captur BMS answers the firmware's UDS reads (sim_twai_tx)
     s_credit[BUS_EV] += s_load[BUS_EV] * TICK_US / FRAME_US;
     if (s_credit[BUS_EV] >= 1) {
         s_credit[BUS_EV] -= 1;
         can_frame_t f = {.dlc = 8, .bus = BUS_EV, .ts_us = now};
-        uint32_t k = s_seq++ % 40;
-        if (k == 0) {          // cells: min 3.68 V, max 3.71 V
-            f.id = 0x5D7; f.data[0] = 3680 & 0xFF; f.data[1] = 3680 >> 8; f.data[2] = 3710 & 0xFF; f.data[3] = 3710 >> 8;
-        } else if (k == 1) {   // pack 125.0 V, 12.3 A, SOC 62 %
-            f.id = 0x5D8; f.data[0] = 1250 & 0xFF; f.data[1] = 1250 >> 8; f.data[2] = 123; f.data[4] = 124;
-        } else if (k == 2) {   // temps 18..22 C
-            f.id = 0x5D9; f.data[0] = 58; f.data[1] = 62;
-        } else {
-            f.id = 0x100 + k;
-        }
+        f.id = 0x100 + s_seq++ % 40;
         s_gen[BUS_EV]++;
         if (xQueueSendFromISR(s_twai_q, &f, &woken) != pdTRUE) s_twai_overflow++;
         notify(NOTIFY_TWAI_BIT, &woken);

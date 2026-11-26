@@ -1,6 +1,7 @@
 // Host tests of the stage-1 safety chain: the firmware's own captur.c, safety.c, contactors.c, ignition.c,
 // control.c and zombie.c, compiled for the PC against a small model of the board and pack:
-//   - Captur contactors (precharge in parallel with main+) with optional welded poles and a link-voltage model;
+//   - the Captur BMS answering UDS reads (DIDs and scales as on the bench);
+//   - Captur contactors (main+, precharge in parallel with it, negative hard-wired) with optional welds;
 //   - the U10/U11 enable latch: WDI rising edge clocks MCU_EN, 1.36 s without an edge clears it;
 //   - the AMC3311 sense (valid or not) and the board supply.
 // One scenario per process (the firmware keeps static state): ./control_test <scenario>; exit 0 = pass.
@@ -18,10 +19,11 @@
 
 // ------------------------------------------------------------------ board and pack model
 static bool out[OUT_COUNT];
-static bool weld_neg, weld_pos, sense_ok = true, latch_q;
-static int32_t pack_mv = 125000, link_mv, link_forced = -1, vbat_mv = 13800;
+static bool weld_pos, weld_pre, sense_ok = true, latch_q;
+static int32_t pack_mv = 125630, link_mv, link_forced = -1, vbat_mv = 13800;   // 34S2P: 34 x 3.695 V
 static uint32_t now = 1000, last_edge;
-static can_frame_t last351;
+static can_frame_t last351, keepalive[4];
+static int n_keepalive;
 
 void hal_out(hal_out_t o, bool on)
 {
@@ -44,9 +46,43 @@ bool hal_vbat_mv(int32_t *mv)
     return true;
 }
 
+// ------------------------------------------------------------------ Captur BMS (UDS 22 replies)
+static uint16_t cell_min = 3680, cell_max = 3710;
+static int32_t cell_sum_mv = -1;   // -1: 68 x the mean of min and max
+static int temp_min = 18, temp_max = 22;
+static bool send_cells = true, send_pack = true, send_temps = true;
+static can_frame_t pending[8];
+static int n_pending;
+
+static void bms_reply(const can_frame_t *q)
+{
+    uint16_t did = q->data[2] << 8 | q->data[3];
+    uint32_t v;
+    int len = 2;
+    bool cells = did == 0x9007 || did == 0x9009 || did == 0x9006, temps = did == 0x9013 || did == 0x9014;
+    if ((cells && !send_cells) || (temps && !send_temps) || (!cells && !temps && !send_pack)) return;
+    uint32_t sum = cell_sum_mv >= 0 ? (uint32_t)cell_sum_mv : 68u * (cell_min + cell_max) / 2;
+    switch (did) {
+    case 0x9007: v = cell_max * 1024u / 1000; break;
+    case 0x9009: v = cell_min * 1024u / 1000; break;
+    case 0x9006: v = (uint32_t)((uint64_t)sum * 1024 / 1000); len = 4; break;
+    case 0x9013: v = (temp_min + 40) * 16; break;
+    case 0x9014: v = (temp_max + 40) * 16; break;
+    case 0x9001: v = 6200 + 300; break;
+    case 0x9005: v = 2513; break;
+    default: return;
+    }
+    can_frame_t r = {.id = CAPTUR_UDS_RESP, .ext = 1, .dlc = 8, .bus = BUS_EV,
+                     .data = {(uint8_t)(3 + len), 0x62, q->data[2], q->data[3], 0xAA, 0xAA, 0xAA, 0xAA}};
+    for (int i = 0; i < len; i++) r.data[4 + i] = (uint8_t)(v >> (8 * (len - 1 - i)));
+    if (n_pending < 8) pending[n_pending++] = r;
+}
+
 bool can_send(bus_id_t bus, const can_frame_t *f)
 {
     if (f->id == 0x351) last351 = *f;
+    if (f->id == CAPTUR_KEEPALIVE_ID && n_keepalive < 4) keepalive[n_keepalive++] = *f;
+    if (f->ext && f->id == CAPTUR_UDS_REQ && f->data[0] == 3 && f->data[1] == 0x22) bms_reply(f);
     return true;
 }
 
@@ -55,31 +91,10 @@ static bool coil(hal_out_t o) { return out[o] && latch_q; }   // a coil needs it
 static void model_step(void)
 {
     if (now - last_edge >= 1360) latch_q = false;   // TPS3431 minimum timeout clears U10
-    bool neg = coil(OUT_HS_MAINN) || weld_neg, pos = coil(OUT_HS_MAINP) || weld_pos;
-    bool pre = coil(OUT_HS_PRE);
-    if (neg && pos) link_mv = pack_mv;
-    else if (neg && pre) link_mv += (pack_mv - link_mv) / 15;   // tau ~150 ms at 10 ms steps
+    bool pos = coil(OUT_HS_MAINP) || weld_pos, pre = coil(OUT_HS_PRE) || weld_pre;   // negative hard-wired
+    if (pos) link_mv = pack_mv;
+    else if (pre) link_mv += (pack_mv - link_mv) / 15;   // tau ~150 ms at 10 ms steps
     else link_mv -= link_mv / 500;                            // bleed, tau ~5 s
-}
-
-// ------------------------------------------------------------------ BMS frames (simulation-build layouts)
-static uint16_t cell_min = 3680, cell_max = 3710;
-static int temp_min = 18, temp_max = 22;
-static bool send_cells = true, send_pack = true, send_temps = true;
-static uint32_t pack_frame_mv = 125000;
-
-static void put16(uint8_t *p, unsigned v) { p[0] = v; p[1] = v >> 8; }
-
-static void bms_frames(void)
-{
-    if (now % 100) return;
-    can_frame_t f = {.bus = BUS_EV, .dlc = 8};
-    if (send_cells) { f.id = 0x5D7; put16(&f.data[0], cell_min); put16(&f.data[2], cell_max); captur_decode(&f, now); }
-    if (send_pack) {
-        memset(f.data, 0, 8); f.id = 0x5D8; put16(&f.data[0], pack_frame_mv / 100); f.data[4] = 120;
-        captur_decode(&f, now);
-    }
-    if (send_temps) { memset(f.data, 0, 8); f.id = 0x5D9; f.data[0] = temp_min + 40; f.data[1] = temp_max + 40; captur_decode(&f, now); }
 }
 
 // one 10 ms control pass, in main.c's order
@@ -88,9 +103,12 @@ static void step(void)
 {
     now += CONTROL_PERIOD_MS;
     contactors_kick_watchdog(now);
-    bms_frames();
+    int n = n_pending;                       // replies to last pass's requests arrive now
+    n_pending = 0;
+    for (int i = 0; i < n; i++) captur_decode(&pending[i], now);
     control_safety_step(now, stage1);
     zombie_tick(now, !stage1);
+    captur_tick(now);
     model_step();
 }
 
@@ -111,7 +129,8 @@ static void normal_close(void)
     }
     CHECK(contactors_state() == CT_CLOSED, "closes on a healthy pack");
     CHECK(saw_overlap && !pos_before_overlap, "precharge held while main+ picks up");
-    CHECK(coil(OUT_HS_MAINN) && coil(OUT_HS_MAINP) && !coil(OUT_HS_PRE), "closed: mains on, precharge off");
+    CHECK(coil(OUT_HS_MAINP) && !coil(OUT_HS_PRE) && !out[OUT_HS_MAINN], "closed: main+ on, precharge off, spare off");
+    CHECK(g_pack.pack_mv > 124000 && g_pack.pack_mv < 127000, "34S2P reference is half the 68-cell sum");
     CHECK(g_safety.taps_enabled, "taps on");
 }
 
@@ -165,26 +184,37 @@ static void soft_trip_while_closed(void)
 
 static void pack_disagrees_with_cells(void)
 {
-    pack_frame_mv = 50000;   // cells say 34 x 3.68 V = 125 V
-    pack_mv = 50000;
+    cell_sum_mv = 110000;   // the extreme cells say 68 x 3.68-3.71 V = 250-252 V
     run(3000);
     CHECK(!coil(OUT_HS_MAINP) && !out[OUT_HS_MAINP], "main+ never commanded");
     CHECK(!g_safety.contactors_permitted, "inconsistent pack voltage is a hard trip");
-}
-
-static void welded_neg(void)
-{
-    weld_neg = true;
-    run(2000);
-    CHECK(contactors_faulted() && strstr(contactors_fault(), "main-"), "welded main- found with precharge alone");
-    CHECK(!out[OUT_HS_MAINP], "main+ never commanded");
 }
 
 static void welded_pos(void)
 {
     weld_pos = true;
     run(2000);
-    CHECK(contactors_faulted() && strstr(contactors_fault(), "main+"), "welded main+ found with main- alone");
+    CHECK(contactors_faulted() && strstr(contactors_fault(), "welded"), "welded main+: link live with coils off");
+    CHECK(!out[OUT_HS_PRE] && !out[OUT_HS_MAINP], "nothing commanded");
+}
+
+static void welded_pre(void)
+{
+    weld_pre = true;
+    run(2000);
+    CHECK(contactors_faulted() && strstr(contactors_fault(), "welded"), "welded precharge: link live with coils off");
+}
+
+static void keepalive_frames(void)
+{
+    run(200);
+    CHECK(n_keepalive == 4, "keep-alive sent");
+    for (int i = 0; i < 4; i++) {   // counters 0-3 with byte 8 D0: CRCs from the bench log
+        CHECK(keepalive[i].id == 0x0F5 && !keepalive[i].ext && keepalive[i].data[1] == i, "0x0F5, counter");
+    }
+    CHECK(keepalive[0].data[2] == 0x1B && keepalive[1].data[2] == 0x5D, "CRC-8 matches the logged frames");
+    uint8_t c8[7] = {0x7D, 2, 0xFF, 0xD7, 0xF8, 0x00, 0xC8}, e0[7] = {0x7D, 3, 0xFF, 0xD7, 0xF8, 0x00, 0xE0};
+    CHECK(captur_crc8(c8, 7) == 0xB2 && captur_crc8(e0, 7) == 0x9B, "CRC-8 with other byte-8 values");
 }
 
 static void sense_invalid(void)
@@ -237,28 +267,38 @@ static void crank_dip_keeps_trip(void)
 static void decoder_checks(void)
 {
     send_cells = send_pack = send_temps = false;
-    can_frame_t f = {.bus = BUS_EV, .id = 0x5D7, .dlc = 3};
-    put16(&f.data[0], 3600); put16(&f.data[2], 3700);
-    captur_decode(&f, now);
-    CHECK(!g_pack.seen[GRP_CELLS], "short DLC rejected");
-    f.dlc = 4; f.rtr = 1;
-    captur_decode(&f, now);
-    CHECK(!g_pack.seen[GRP_CELLS], "RTR rejected");
-    f.rtr = 0; f.ext = 1;
-    captur_decode(&f, now);
-    CHECK(!g_pack.seen[GRP_CELLS], "extended ID rejected");
-    f.ext = 0;
-    captur_decode(&f, now - 600);   // arrived 600 ms ago, decoded now
-    CHECK(g_pack.seen[GRP_CELLS] && g_pack.last_ms[GRP_CELLS] == now - 600, "freshness from arrival time");
+    can_frame_t f = {.bus = BUS_EV, .id = CAPTUR_UDS_RESP, .ext = 1, .dlc = 8, .data = {0x05, 0x62, 0x90, 0x13, 0x03, 0xA0}};
+    can_frame_t g = f;
+    g.data[3] = 0x14;
+    g.dlc = 5;
+    captur_decode(&f, now); captur_decode(&g, now);
+    CHECK(!g_pack.seen[GRP_TEMPS], "short DLC rejected");
+    g.dlc = 8; g.rtr = 1;
+    captur_decode(&g, now);
+    CHECK(!g_pack.seen[GRP_TEMPS], "RTR rejected");
+    g.rtr = 0; g.ext = 0;
+    captur_decode(&g, now);
+    CHECK(!g_pack.seen[GRP_TEMPS], "standard ID rejected");
+    g.ext = 1; g.data[0] = 0x06;
+    captur_decode(&g, now);
+    CHECK(!g_pack.seen[GRP_TEMPS], "wrong ISO-TP length rejected");
+    g.data[0] = 0x05; g.data[1] = 0x7F;
+    captur_decode(&g, now);
+    CHECK(!g_pack.seen[GRP_TEMPS], "negative response ignored");
+    g.data[1] = 0x62;
+    captur_decode(&f, now - 600); captur_decode(&g, now - 400);   // arrived 600 / 400 ms ago, decoded now
+    CHECK(g_pack.seen[GRP_TEMPS] && g_pack.last_ms[GRP_TEMPS] == now - 600, "freshness from the oldest arrival");
+    CHECK(g_pack.temp_min_c == 18 && g_pack.temp_max_c == 18, "(raw - 640) / 16");
 }
 
 static const struct { const char *name; void (*fn)(void); } SCEN[] = {
     {"normal_close", normal_close}, {"only_cells", only_cells}, {"stale_groups_stage2", stale_groups_stage2},
     {"live_link_while_open", live_link_while_open}, {"soft_trip_before_start", soft_trip_before_start},
     {"soft_trip_while_closed", soft_trip_while_closed}, {"pack_disagrees_with_cells", pack_disagrees_with_cells},
-    {"welded_neg", welded_neg}, {"welded_pos", welded_pos}, {"sense_invalid", sense_invalid},
+    {"welded_pos", welded_pos}, {"welded_pre", welded_pre}, {"sense_invalid", sense_invalid},
     {"sense_lost_while_closed", sense_lost_while_closed}, {"stall_and_resume", stall_and_resume},
     {"crank_dip_keeps_trip", crank_dip_keeps_trip}, {"decoder_checks", decoder_checks},
+    {"keepalive_frames", keepalive_frames},
 };
 
 int main(int argc, char **argv)

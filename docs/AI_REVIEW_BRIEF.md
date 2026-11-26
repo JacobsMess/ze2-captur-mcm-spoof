@@ -32,7 +32,7 @@ ESP32-S3-WROOM-1 module, 4-layer, 120 x 98 mm, parts on top, made and assembled 
 | Cell taps | A 16-resistor divider across the real pack bus gives the MCM nine balanced "block" voltages. Two optoMOS connect it; unpowered = taps float = MCM faults safely | 47k 0.1 %, AQV214EH x2 |
 | Bus sense | Isolated measurement of the pack bus voltage for precharge and weld checks | AMC3311 (isolated amplifier with its own isolated supply) |
 | Analog island | Fakes the three NTC temperature inputs and adds a small offset to the Hall current-sensor signal (steers the MCM's own SOC count). Runs from the MCM's 5 V sensor supply, I2C-isolated from the rest | MCP4728 DAC, MCP6004, ADS1115 x2, ISO1540 |
-| Contactor drive | Drives the Captur pack's precharge and main contactors and its BMS 12 V feed | VND7050AJ high-side x2; low-side master FET driven by an enable latch through a 5 V gate buffer |
+| Contactor drive | Drives the Captur pack's precharge and main contactors and its BMS 12 V feed | VND7050AJ high-side x2 (one channel spare); low-side master FET driven by an enable latch through a 5 V gate buffer |
 | Watchdog latch | Each watchdog kick (WDI edge) clocks MCU_EN into a D flip-flop whose Q drives the master FET. A watchdog timeout clears the flip-flop; firmware that notices its own stall on resume latches a fault before the next kick, so coils never come back on their own. An RC gives a power-on clear | TPS3431, SN74LVC1G74, SN74LV1T34 |
 
 HV strip: right-hand edge, 150 V maximum, separated by a 5.6 mm copper-free band. Only three isolation
@@ -43,7 +43,7 @@ parts cross it (K2, K3, U12), with a short slot under each.
 | Ref | Goes to | Signals |
 |---|---|---|
 | J1 (Micro-Fit 2x10) | Car harness / MCM | 12 V ignition feed, GND, IMA bus (PCM side), IMA bus (MCM side), dash CAN, CAN1 |
-| J2 (Micro-Fit 2x8) | Captur pack LV | Coil supply, contactor coil drives (precharge, main+, main-, return), BMS 12 V, CAN1, coolant pump |
+| J2 (Micro-Fit 2x8) | Captur pack LV | Coil supply, contactor coil drives (precharge, main+, spare, common return), BMS 12 V, CAN1, coolant pump |
 | J3 (5.08 mm terminal) | Pack HV bus | BUS+, BUS- |
 | J4 (Mini-Fit 2x5) | MCM tap harness | Nine tap outputs VHB0-VHB8 |
 | J6 (Micro-Fit 2x4) | MCM analog | MCM 5 V, sensor ground, three NTC lines, Hall sensor in and out |
@@ -52,12 +52,12 @@ parts cross it (K2, K3, U12), with a short slot under each.
 ## How it behaves
 
 - **Key on:** read by the ADC on the board supply, with hysteresis and dwell (a crank dip is not a key-off).
-  The board then closes the Captur contactors before the MCM looks at the pack: weld check of each pole,
-  precharge, main+ with precharge held through pickup, verify. Then it connects the taps. CAN2-4 start in
+  The board then closes the Captur contactors before the MCM looks at the pack: link must be dead with both
+  coils off (weld check), precharge, main+ with precharge held through pickup, verify. Then it connects the taps. CAN2-4 start in
   listen-only.
 - **Faults:** a contactor, weld, bus-sense or stall fault is latched until key-off and is a hard trip (taps
-  float, contactors open). A soft trip never starts a close. The BMS pack voltage must agree with the cell
-  range x series count.
+  float, contactors open). A soft trip never starts a close. The BMS cell sum must agree with 68 x the
+  extreme cells; the precharge target is the sum scaled to the series string.
 - **Running:** taps follow the real pack; temperatures and SOC offset come from the Captur BMS over CAN1;
   IMA frames are forwarded (and can be modified) between CAN2 and CAN3.
 - **Protection order:** steer SOC first; then float the taps so the MCM faults; last, open the contactors
@@ -73,7 +73,10 @@ parts cross it (K2, K3, U12), with a short slot under each.
 - Full-bus gaps (BUS_P side to the bus-negative side) are held to 0.7 mm by a DRC rule; IPC-2221 B2 asks
   0.6 mm uncoated at 101-150 V. Conformal coating planned.
 - Coil and pump currents are not yet measured; that copper is 1.0 mm where it fits, down to 0.5 mm.
-- Captur CAN IDs and the Honda SOC decode are placeholders until logged.
+- The Captur BMS protocol is decoded (0x0F5 keep-alive, UDS reads; see `firmware/main/captur.h`); its current
+  reading isn't. The Honda IMA IDs and SOC decode are placeholders until logged.
+- The Captur has two contactors (main+ and precharge, negative hard-wired). Coils measured: main 22.8 ohm,
+  0.535 A at 12 V; precharge about 56 ohm, 0.2 A; no internal diodes.
 - Unknowns about the car: MCM tap input impedance and timing, NTC pull-ups, Hall sensor zero and scale,
   IMA bus load and terminations. These get measured before anything is connected.
 - The bus-sense divider uses 1 % parts; its ratio is trimmed in firmware (`HV_DIV_X1000`).

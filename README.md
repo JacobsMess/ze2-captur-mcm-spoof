@@ -56,10 +56,14 @@ inverter.
   in; if the firmware hangs the watchdog clears it. A stall is a latched fault: nothing closes again
   until a key-off, which the ADC reads with hysteresis and a 2 s dwell so a crank dip doesn't count.
   Contactor, sensing and weld faults all end the same way. No regen below about 5 C.
-- **Closing the contactors:** each pole is checked for a weld on its own (precharge alone, then main-
-  alone, with the link watched by the AMC3311), then precharge, then main+ with precharge still held
-  until it has picked up. A soft trip keeps a closed pack closed but never starts a close. The BMS pack
-  voltage must agree with 34 x its cell range.
+- **Closing the contactors:** the Captur has two, main+ and precharge; pack negative is hard-wired. With
+  both coils off the link (watched by the AMC3311) must be dead, which rules out a weld. Then precharge,
+  then main+ with precharge still held until it has picked up, then a check that the link reached the
+  pack. A soft trip keeps a closed pack closed but never starts a close.
+- **Captur BMS:** kept awake by the 0x0F5 frame every 20 ms (counter + CRC-8) and read with UDS (29-bit,
+  read-only) for the extreme cells, the cell sum, temperatures and SOC, as decoded on the bench. The
+  precharge target is the cell sum scaled to the series string (half of it in 34S2P), and the sum must
+  agree with 68 x the extreme cells.
 - **If the board dies:** the IMA bus rejoins and the dash is unaffected, but the pack drops out on
   purpose. The car runs engine-only with the IMA light, and the 12 V battery isn't charged (the
   DC-DC runs off the pack).
@@ -99,8 +103,11 @@ J3 overhangs the top edge with its wire entry facing out, and the USB-C face sit
 - Pinouts to check against datasheets: VND7050AJ (custom PowerSSO-16 footprint in `hw/lib`),
   TPS3431 and SN74LVC1G74 (watchdog latch), SN74LV1T34 (5 V gate buffers), AMC3311, AQY212GS,
   H24VNT2B, and the SMMS0630 inductor on the SRP7028A land pattern.
-- Measure the Captur coil pull-in currents and the pump's stall current. Coil and pump copper is
-  1.0 mm where it fits, 0.75 mm or the original 0.5 mm in the tight spots.
+- Measure the pump's stall current once it's chosen. The Captur coils are measured: main 22.8 ohm
+  (0.535 A at 12 V, pulls in at 5.5 V), precharge about 56 ohm (0.2 A, 6.8 V), so the coil path carries
+  under 0.8 A. Coil and pump copper is 1.0 mm where it fits, 0.75 mm or 0.5 mm in the tight spots.
+- Wire the pack as below (the coils have no internal diode, so driving them from the high side with the
+  common pin 7 on the return is fine).
 - K4: beep-test a G6K-2F-Y before fitting. Pins 3/6 must be the commons (IMA side), 2/7 the
   normally-closed contacts (MCM side).
 - AMC3311 stock at JLC is low: check before ordering, or fit by hand.
@@ -114,6 +121,19 @@ J3 overhangs the top edge with its wire entry facing out, and the USB-C face sit
   SavvyCAN log of the IMA bus.
 - Trim `HV_DIV_X1000` in `firmware/main/config.h` against a meter on the pack: the bus-sense divider
   uses 1 % Basic parts.
+
+### Captur LV connector to J2
+
+| Captur pin | Function | J2 pin (net) |
+|---|---|---|
+| 1 | BMS +12 V | 5 (BMS12V) |
+| 6, 12 | Ground | 3, 4, 8 (GND) |
+| 5 / 10 | CAN H / CAN L | 6 / 7 (CAN1H / CAN1L) |
+| 8 | HVIL loop: link to pin 12, as on the bench | - |
+| 7 | Common of both coils | 12 (COIL_RTN) |
+| 3 | Precharge coil | 9 (COIL_PRE) |
+| 4 | Main coil | 10 (COIL_MAINP) |
+| - | (spare high side; no main- contactor) | 11 (COIL_MAINN), leave open |
 
 ## Ordering at JLCPCB
 

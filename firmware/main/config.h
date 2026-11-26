@@ -1,6 +1,6 @@
-// Board pin map, timing and protocol placeholders. Pins follow hw/parts.json (ESP32-S3-WROOM-1 module pins
-// mapped to GPIOs). CAN IDs marked TODO are not known yet: they come from SavvyCAN logs of the stock car and
-// the Captur pack. Until then the gateway passes IMA traffic through unchanged.
+// Board pin map, timing and protocol constants. Pins follow hw/parts.json (ESP32-S3-WROOM-1 module pins
+// mapped to GPIOs). The Honda IMA IDs are not known yet (they come from SavvyCAN logs of the stock car); until
+// then the gateway passes IMA traffic through unchanged.
 #pragma once
 #include <stdint.h>
 #include "sdkconfig.h"
@@ -18,7 +18,7 @@
 #define PIN_MCU_EN       7   // pin 7  U10 latch D: contactor master enable, clocked in by WDI
 #define PIN_HS_PRE       15  // pin 8  VND7050 precharge contactor
 #define PIN_HS_MAINP     16  // pin 9  VND7050 main + contactor
-#define PIN_HS_MAINN     17  // pin 10 VND7050 main - contactor
+#define PIN_HS_MAINN     17  // pin 10 VND7050 spare channel (the Captur has no main- contactor): never driven
 #define PIN_I2C_SCL      18  // pin 11 to the analog island through ISO1540
 #define PIN_I2C_SDA      8   // pin 12
 #define PIN_CAN3_INT     3   // pin 15 MCP2518FD U18 (PCM side of the IMA bus)
@@ -67,13 +67,12 @@ typedef enum { BUS_EV = 0, BUS_MCM = 1, BUS_PCM = 2, BUS_DASH = 3, BUS_COUNT = 4
 #define PACK_MAX_TEMP_C    55
 #define PRECHARGE_PCT      90         // bus must reach this % of pack voltage
 #define PRECHARGE_TIMEOUT_MS 3000
-#define DEAD_BUS_MV        20000      // below this the link counts as dead (weld checks)
-#define WELD_CHECK_MS      200        // each pole energised alone this long, link must stay dead
+#define DEAD_BUS_MV        20000      // below this the link counts as dead (weld check)
 #define MAIN_PICKUP_MS     100        // precharge held this long after main+ is commanded
 #define CLOSE_VERIFY_MS    100        // then link must be >= CLOSED_MIN_PCT of pack
 #define CLOSED_MIN_PCT     95
 #define BUS_COLLAPSE_PCT   70         // closed, link below this % of pack: fault
-#define PACK_TOL_PCT       3          // pack V vs series x cell range: 3 % + 2 V
+#define PACK_TOL_PCT       3          // BMS cell sum vs 68 x cell range: 3 % + 2 V
 #define PACK_TOL_MV        2000
 
 // ---------------------------------------------------------------- ignition (board supply after D7)
@@ -88,11 +87,11 @@ typedef enum { BUS_EV = 0, BUS_MCM = 1, BUS_PCM = 2, BUS_DASH = 3, BUS_COUNT = 4
 #define WDI_PERIOD_MS      100        // TPS3431 kick: one rising edge per period (timeout 1.36 s min)
 #define WDT_STALL_MS       600        // loop gap this long with coils energised: latched fault
 #define BUS_SILENT_MS      500        // IMA half quiet this long -> drop back to bypass
-#define BMS_TIMEOUT_MS     500        // Captur BMS quiet this long -> hard trip
+#define BMS_TIMEOUT_MS     1000       // any Captur value older than this -> hard trip (normally < 150 ms)
 
-// ---------------------------------------------------------------- CAN IDs (TODO: fill from logs)
-#define CAPTUR_ID_CELLS    0x000      // TODO min/max cell mV
-#define CAPTUR_ID_PACK     0x000      // TODO pack V, I, SOC
-#define CAPTUR_ID_TEMPS    0x000      // TODO module temperatures
-#define CAPTUR_ID_CONTACTOR_CMD 0x000 // TODO HEV ECU -> BMS contactor request
+// ---------------------------------------------------------------- CAN IDs
+#define CAPTUR_KEEPALIVE_ID 0x0F5     // Captur BMS stays awake while this arrives (captur.h)
+#define CAPTUR_KEEPALIVE_MS 20
+#define CAPTUR_UDS_REQ     0x18DADBF1 // UDS read requests to the BMS (29-bit)
+#define CAPTUR_UDS_RESP    0x18DAF1DB // its replies
 #define ZV_ID_BMS_BASE     0x3E0      // stage 2: ZombieVerter "simpBMS"-style frames (check against ZV firmware)

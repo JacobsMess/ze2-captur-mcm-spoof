@@ -62,7 +62,7 @@ static void control_task(void *arg)
         }
         bool ign = control_safety_step(now, cfg.stage == 1);
         if (cfg.stage == 1) spoof_tick(now);   // stage 2: taps stay off
-        captur_tick(now, g_safety.contactors_permitted);
+        captur_tick(now);
         zombie_tick(now, cfg.stage == 2);
         gateway_tick(now, ign && cfg.mitm);
         hal_pump_pwm(ign ? (g_pack.temp_max_c > 35 ? 1.0f : 0.4f) : 0);

@@ -112,18 +112,23 @@ def sheet2(path):
             if n == "BMS_PWR":
                 d += elm.Line().at(hs.OUT).down(1.0)
                 d += elm.Dot(open=True).label("J2 BMS 12V out", "bottom")
+            elif n == "MAIN-":   # the Captur has no main- contactor: spare output, never driven
+                d += elm.Line().at(hs.OUT).down(1.0)
+                d += elm.Dot(open=True).label("J2 spare (open)", "bottom")
             else:
-                d += elm.Line().at(hs.OUT).down(0.6).label(f"J2 {n}", "right", fontsize=8)
-                d += elm.Inductor2(loops=3).down(2.0).label(f"Captur\n{n} coil", "right", fontsize=8)
+                d += elm.Line().at(hs.OUT).down(0.6)
+                d += (coil := elm.Inductor2(loops=3).down(2.0))
+                note(d, (x + 0.5, coil.center[1] + 0.5),
+                     f"J2 {n}\nCaptur {n} coil\n" + ("56R 0.2A" if n == "PRE" else "22.8R 0.54A"), 8)
                 d += (r := elm.Dot())
                 rets.append(r.center)
         d += elm.Line().at(rets[0]).to(rets[-1])
-        note(d, (rets[0][0], rets[0][1] - 0.3), "COIL_RTN (back via J2)", 8)
+        note(d, (rets[0][0], rets[0][1] - 0.3), "COIL_RTN = Captur pin 7 (coil common)", 8)
         d += elm.Line().at(rets[-1]).right(2.0)
         d += (rn := elm.Dot())
         d += elm.Zener().at(rn.center).right(2.2).reverse()
         d += elm.Ground()
-        note(d, (rn.center[0] + 0.4, rn.center[1] + 1.0), "D2 SMBJ33A clamp", 8)
+        note(d, (rn.center[0] + 0.9, rn.center[1] + 0.9), "D2 SMBJ33A clamp", 8)
         d += elm.Line().at(rn.center).down(0.8)
         d += (q := elm.NFet(bulk=False).anchor("drain").down())
         d += elm.Ground().at(q.source)

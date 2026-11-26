@@ -32,7 +32,11 @@ bool hal_spi_xfer(int chip, const uint8_t *tx, uint8_t *rx, size_t len)
 
 bool hal_mcp_int_asserted(int chip) { return sim_model_int(chip); }
 bool hal_twai_receive(can_frame_t *f) { return sim_twai_pop(f); }
-bool hal_twai_send(const can_frame_t *f) { return true; }
+bool hal_twai_send(const can_frame_t *f)
+{
+    sim_twai_tx(f);
+    return true;
+}
 bool hal_twai_ok(void) { return true; }
 
 void hal_out(hal_out_t o, bool on)
@@ -61,12 +65,12 @@ bool hal_bus_mv(int32_t *out)
 {
     // bus side of the Captur contactors: RC charge through the precharge resistor (tau 150 ms), instant
     // through the main contactor, slow bleed when open
-    const int32_t pack = 125000;   // matches the simulated BMS frames (34 x 3.68 V)
+    const int32_t pack = 125600;   // matches the simulated BMS (34 x 3.695 V)
     int64_t now = esp_timer_get_time();
     float dt = (now - s_bus_t) / 1e6f;
     s_bus_t = now;
-    if (s_out[OUT_HS_MAINN] && s_out[OUT_HS_MAINP]) s_bus_mv = pack;
-    else if (s_out[OUT_HS_MAINN] && s_out[OUT_HS_PRE]) s_bus_mv += (int32_t)((pack - s_bus_mv) * (dt / 0.15f > 1 ? 1 : dt / 0.15f));
+    if (s_out[OUT_HS_MAINP]) s_bus_mv = pack;   // Captur: pack negative hard-wired, main+ and precharge only
+    else if (s_out[OUT_HS_PRE]) s_bus_mv += (int32_t)((pack - s_bus_mv) * (dt / 0.15f > 1 ? 1 : dt / 0.15f));
     else s_bus_mv -= (int32_t)(s_bus_mv * (dt / 5.0f > 1 ? 1 : dt / 5.0f));
     *out = s_bus_mv;
     return true;
