@@ -73,7 +73,7 @@ def test_watchdog_pinout_and_latch(parts):
     u10 = parts["U10"]["nets"]
     assert (u10["1"], u10["2"], u10["5"], u10["6"], u10["7"], u10["8"]) == \
         ("WDI", "MCU_EN", "MASTER_EN", "WDT_OK", "+3V3", "+3V3")
-    assert {net(parts, "R16", 1), net(parts, "R16", 2)} == {"MASTER_EN", "Q2_G"}
+    assert {net(parts, "R16", 1), net(parts, "R16", 2)} == {"Q2_DRV", "Q2_G"}
     assert {net(parts, "C27", 1), net(parts, "C27", 2)} == {"WDT_OK", "GND"}, "power-on clear of the latch"
 
 
@@ -102,3 +102,13 @@ def test_reverse_protection_and_isolated_sense(parts):
     assert parts["U12"]["mpn"].startswith("AMC3311")
     assert (u["1"], u["3"], u["6"], u["12"], u["13"], u["16"]) == ("HV5V", "HV5V", "SENSE_MID", "+5V", "AMC_LDO", "AMC_LDO")
     assert "PS1" not in parts
+
+
+def test_low_side_fets_get_5v_gate_drive(parts):
+    # NCE6020AK: RDS(on) specified from VGS = 4.5 V, VGS(th) up to 2.5 V, so 3.3 V logic goes through a 5 V
+    # SN74LV1T34 (VIH 2.0 V at 5 V) to each gate (SC-70: 1 NC, 2 A, 3 GND, 4 Y, 5 VCC)
+    for buf, src, drv, res, gate in (("U23", "MASTER_EN", "Q2_DRV", "R16", "Q2_G"), ("U24", "PUMP_PWM", "Q3_DRV", "R20", "Q3_G")):
+        n = parts[buf]["nets"]
+        assert parts[buf]["mpn"].startswith("SN74LV1T34")
+        assert (n["2"], n["3"], n["4"], n["5"]) == (src, "GND", drv, "+5V"), buf
+        assert {net(parts, res, 1), net(parts, res, 2)} == {drv, gate}

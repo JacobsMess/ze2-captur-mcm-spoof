@@ -10,11 +10,12 @@ typedef struct {
     bool regen_inhibit;        // too cold to charge, or cells near full
     bool assist_inhibit;       // cells near empty
     bool taps_enabled;         // optoMOS on (MCM sees a pack)
-    bool contactors_permitted;
+    bool contactors_permitted; // may stay closed
+    bool start_permitted;      // may start a close from open: nothing above SAFE_STEER
     const char *reason;
 } safety_t;
 
 extern safety_t g_safety;
-void safety_tick(uint32_t now_ms, bool ignition, bool contactors_closed);
-bool safety_ota_allowed(void);   // ignition off and contactors open
-void safety_reset_latch(void);   // key-off clears a hard trip
+// ct_fault: the contactor sequencer's latched fault reason, or NULL. Any local fault is a hard trip.
+void safety_tick(uint32_t now_ms, bool ignition, bool contactors_energised, const char *ct_fault);
+bool safety_ota_allowed(void);   // ignition off and contactors open; also gates CAN transmit from GVRET

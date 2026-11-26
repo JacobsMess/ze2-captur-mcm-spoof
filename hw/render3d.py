@@ -31,6 +31,7 @@ SUBST = {
     "Package_SO.3dshapes/SOIC-16W_7.5x10.3mm_P1.27mm.wrl": ("Package_SO.3dshapes/SOIC-18W_7.5x11.6mm_P1.27mm.wrl", "all", None),
     "Package_SO.3dshapes/VSSOP-8_2.3x2mm_P0.5mm.wrl": ("Package_SO.3dshapes/SOIC-8_3.9x4.9mm_P1.27mm.wrl", "all", 0.9),
     "Package_SO.3dshapes/SOP-4_3.8x4.1mm_P2.54mm.wrl": ("Package_SO.3dshapes/SOP-4_4.4x2.6mm_P1.27mm.wrl", "all", None),
+    "Package_TO_SOT_SMD.3dshapes/SOT-353_SC-70-5.wrl": ("Package_TO_SOT_SMD.3dshapes/SOT-23-5.wrl", "all", 0.9),
     "ze2/ST_PowerSSO-16": ("Package_SO.3dshapes/TSSOP-16-1EP_4.4x5mm_Pitch0.65mm_EP3.4x5mm.wrl", "body", None),
 }
 FP_MODEL = {"ST_PowerSSO-16_3.9x4.9mm_P0.5mm_EP2.2x3.9mm": "ze2/ST_PowerSSO-16"}  # custom footprints with no model

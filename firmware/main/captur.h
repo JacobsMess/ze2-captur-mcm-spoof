@@ -20,6 +20,8 @@ typedef struct {
 extern pack_state_t g_pack;
 
 bool captur_wants(const can_frame_t *f);                // CAN task: route to the control task?
-void captur_decode(const can_frame_t *f, uint32_t now_ms);
+void captur_decode(const can_frame_t *f, uint32_t rx_ms); // rx_ms: when the frame arrived, not when decoded
 bool captur_fresh(uint32_t now_ms);                      // every group fresh and plausible
+void captur_set_series(int cells);                       // 34 in stage 1, 68 in stage 2
+bool captur_consistent(void);                            // pack voltage agrees with series x cell range
 void captur_tick(uint32_t now_ms, bool contactors_wanted);  // sends the keep-alive / contactor request

@@ -5,6 +5,7 @@
 #include "can_io.h"
 #include "captur.h"
 #include "contactors.h"
+#include "control.h"
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
@@ -48,23 +49,24 @@ static void control_task(void *arg)
     cfg_t cfg = *(cfg_t *)arg;
     TickType_t wake = xTaskGetTickCount();
     for (;;) {
-        uint32_t now = (uint32_t)(esp_timer_get_time() / 1000);
+        int64_t now_us = esp_timer_get_time();
+        uint32_t now = (uint32_t)(now_us / 1000);
+        contactors_kick_watchdog(now);   // first: a stall is caught before anything can re-arm the latch
         can_frame_t f;
         while (xQueueReceive(g_app_rx, &f, 0) == pdTRUE) {
-            captur_decode(&f, now);
-            gateway_decode(&f, now);
+            // freshness from arrival time; a frame stamped after now_us was read (other core) is 0 ms old
+            int32_t age_us = (int32_t)((uint32_t)now_us - f.ts_us);
+            uint32_t rx_ms = now - (age_us > 0 ? (uint32_t)age_us / 1000 : 0);
+            captur_decode(&f, rx_ms);
+            gateway_decode(&f, rx_ms);
         }
-        bool ign = hal_ignition_on();
-        bool closed = contactors_state() == CT_CLOSED;
-        safety_tick(now, ign, closed);
-        contactors_kick_watchdog(now);
-        contactors_tick(now, g_safety.contactors_permitted && ign);
+        bool ign = control_safety_step(now, cfg.stage == 1);
+        if (cfg.stage == 1) spoof_tick(now);   // stage 2: taps stay off
         captur_tick(now, g_safety.contactors_permitted);
-        if (cfg.stage == 1) spoof_tick(now);
         zombie_tick(now, cfg.stage == 2);
         gateway_tick(now, ign && cfg.mitm);
         hal_pump_pwm(ign ? (g_pack.temp_max_c > 35 ? 1.0f : 0.4f) : 0);
-        ota_tick(now, can_io_ready(0) && can_io_ready(1) && can_io_ready(2));
+        ota_tick(now, can_io_healthy());
         vTaskDelayUntil(&wake, pdMS_TO_TICKS(CONTROL_PERIOD_MS));
     }
 }
@@ -81,6 +83,7 @@ void app_main(void)
     ESP_LOGI(TAG, "stage %d, IMA man-in-the-middle %s%s", cfg.stage, cfg.mitm ? "enabled" : "disabled",
              ZE2_SIM ? " [SIMULATION BUILD]" : "");
     board_hal_init();                   // all outputs off, K4 relaxed: car runs as if the board weren't there
+    captur_set_series(cfg.stage == 2 ? 2 * PACK_SERIES : PACK_SERIES);
     gateway_init();
     contactors_init();
 #if CONFIG_ZE2_SIM

@@ -100,6 +100,15 @@ static void can_task(void *arg)
 
 bool can_io_ready(int chip) { return s_ready[chip]; }
 
+bool can_io_healthy(void)
+{
+    if (!hal_twai_ok()) return false;
+    for (int c = 0; c < MCP_COUNT; c++) {
+        if (!s_ready[c] || mcp_stats(c)->spi_err) return false;
+    }
+    return true;
+}
+
 void can_io_start(void)
 {
     g_app_rx = xQueueCreate(64, sizeof(can_frame_t));

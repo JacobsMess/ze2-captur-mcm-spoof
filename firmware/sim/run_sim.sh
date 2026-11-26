@@ -23,5 +23,6 @@ for i in 0 1; do
   kill "${pids[$i]}" 2>/dev/null || true
 done
 wait || true
-python3 sim/report.py sim/out/qemu_shift2.log sim/out/qemu_shift3.log > sim/out/report.md
+python3 sim/report.py sim/out/qemu_shift2.log sim/out/qemu_shift3.log > sim/out/report.md.new
+mv sim/out/report.md.new sim/out/report.md
 cat sim/out/report.md

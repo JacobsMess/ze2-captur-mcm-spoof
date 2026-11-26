@@ -6,7 +6,8 @@ G = not stocked by JLC: order through JLC global sourcing or fit by hand. Prices
 Precision parts that stay Extended on purpose: the 0.1 % tap-ladder resistors (RD, matched block voltages to
 the MCM). Everything else that has a Basic/Preferred equivalent uses it.
 """
-EXT_FEE = 3.0  # USD per unique Extended part type, JLC standard assembly
+ECON_EXT_FEE = 3.07   # USD per unique Extended SMT type, Economic assembly (Basic/Preferred free)
+STD_FEEDER_FEE = 1.53  # USD per unique Basic or Extended SMT type, Standard assembly
 
 # (value, footprint) -> (LCSC, MPN, class, unit USD)
 PARTS = {
@@ -65,6 +66,7 @@ PARTS = {
     ("LMR16006Y-Q1", "SOT-23-6"): ("C544521", "LMR16006YQDDCRQ1", "E", 0.885),
     ("TLV75733PDBV", "SOT-23-5"): ("C485517", "TLV75733PDBVR", "E", 0.201),
     ("74LVC1G74", "VSSOP-8_2.3x2mm_P0.5mm"): ("C70285", "SN74LVC1G74DCUR", "E", 0.25),
+    ("SN74LV1T34", "SOT-353_SC-70-5"): ("C78541", "SN74LV1T34DCKR", "E", 0.08),
     ("VND7050AJ", "ST_PowerSSO-16_3.9x4.9mm_P0.5mm_EP2.2x3.9mm"): ("C443997", "VND7050AJTR", "E", 1.659),
     ("ISO1540", "SOIC-8_3.9x4.9mm_P1.27mm"): ("C179739", "ISO1540DR", "E", 0.957),
     ("AMC3311", "SOIC-16W_7.5x10.3mm_P1.27mm"): ("C22441843", "AMC3311DWER (low JLC stock: check)", "E", 5.856),

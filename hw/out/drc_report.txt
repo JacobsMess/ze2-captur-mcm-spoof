@@ -1,5 +1,5 @@
-** Drc report for /tmp/tidy_v06.kicad_pcb **
-** Created on 2026-11-25 21:48:01 **
+** Drc report for /tmp/tidy_v07.kicad_pcb **
+** Created on 2026-11-26 06:21:20 **
 
 ** Found 203 DRC violations **
 [lib_footprint_issues]: The current configuration does not include the library ''.
@@ -29,6 +29,9 @@
 [lib_footprint_issues]: The current configuration does not include the library ''.
     Local override; Severity: warning
     @(114.0000 mm, 108.5000 mm): Footprint C47
+[lib_footprint_issues]: The current configuration does not include the library ''.
+    Local override; Severity: warning
+    @(132.5000 mm, 76.0000 mm): Footprint C48
 [lib_footprint_issues]: The current configuration does not include the library ''.
     Local override; Severity: warning
     @(148.5000 mm, 105.5000 mm): Footprint RD12
@@ -184,6 +187,9 @@
     @(100.0000 mm, 77.0000 mm): Footprint C17
 [lib_footprint_issues]: The current configuration does not include the library ''.
     Local override; Severity: warning
+    @(143.5000 mm, 58.5000 mm): Footprint RF1
+[lib_footprint_issues]: The current configuration does not include the library ''.
+    Local override; Severity: warning
     @(96.0000 mm, 76.0000 mm): Footprint C13
 [lib_footprint_issues]: The current configuration does not include the library ''.
     Local override; Severity: warning
@@ -217,6 +223,9 @@
     @(124.0000 mm, 57.0000 mm): Footprint R35
 [lib_footprint_issues]: The current configuration does not include the library ''.
     Local override; Severity: warning
+    @(106.6000 mm, 114.8000 mm): Footprint U24
+[lib_footprint_issues]: The current configuration does not include the library ''.
+    Local override; Severity: warning
     @(145.1000 mm, 67.4000 mm): Footprint C44
 [lib_footprint_issues]: The current configuration does not include the library ''.
     Local override; Severity: warning
@@ -227,9 +236,6 @@
 [lib_footprint_issues]: The current configuration does not include the library ''.
     Local override; Severity: warning
     @(125.0000 mm, 121.5000 mm): Footprint R96
-[lib_footprint_issues]: The current configuration does not include the library ''.
-    Local override; Severity: warning
-    @(143.5000 mm, 59.0000 mm): Footprint RF1
 [lib_footprint_issues]: The current configuration does not include the library ''.
     Local override; Severity: warning
     @(104.0000 mm, 67.5000 mm): Footprint U14
@@ -335,6 +341,9 @@
 [lib_footprint_issues]: The current configuration does not include the library ''.
     Local override; Severity: warning
     @(148.5000 mm, 74.0000 mm): Footprint RD3
+[lib_footprint_issues]: The current configuration does not include the library ''.
+    Local override; Severity: warning
+    @(93.5000 mm, 114.8000 mm): Footprint U23
 [lib_footprint_issues]: The current configuration does not include the library ''.
     Local override; Severity: warning
     @(121.5000 mm, 122.0000 mm): Footprint R60
@@ -481,6 +490,9 @@
     @(134.5000 mm, 122.0000 mm): Footprint R61
 [lib_footprint_issues]: The current configuration does not include the library ''.
     Local override; Severity: warning
+    @(106.6000 mm, 112.4000 mm): Footprint C50
+[lib_footprint_issues]: The current configuration does not include the library ''.
+    Local override; Severity: warning
     @(128.0000 mm, 84.0000 mm): Footprint R51
 [lib_footprint_issues]: The current configuration does not include the library ''.
     Local override; Severity: warning
@@ -541,6 +553,9 @@
     @(66.0000 mm, 81.0000 mm): Footprint C14
 [lib_footprint_issues]: The current configuration does not include the library ''.
     Local override; Severity: warning
+    @(92.6000 mm, 112.3000 mm): Footprint C49
+[lib_footprint_issues]: The current configuration does not include the library ''.
+    Local override; Severity: warning
     @(113.0000 mm, 74.0000 mm): Footprint R41
 [lib_footprint_issues]: The current configuration does not include the library ''.
     Local override; Severity: warning
@@ -584,29 +599,14 @@
 [lib_footprint_issues]: The current configuration does not include the library ''.
     Local override; Severity: warning
     @(80.0000 mm, 89.5000 mm): Footprint R70
-[lib_footprint_issues]: The current configuration does not include the library ''.
-    Local override; Severity: warning
-    @(94.0000 mm, 85.0000 mm): Footprint U6
-[lib_footprint_issues]: The current configuration does not include the library ''.
-    Local override; Severity: warning
-    @(148.5000 mm, 98.5000 mm): Footprint RD10
-[lib_footprint_issues]: The current configuration does not include the library ''.
-    Local override; Severity: warning
-    @(118.0000 mm, 66.5000 mm): Footprint R37
-[lib_footprint_issues]: The current configuration does not include the library ''.
-    Local override; Severity: warning
-    @(125.5000 mm, 78.5000 mm): Footprint R47
-[lib_footprint_issues]: The current configuration does not include the library ''.
-    Local override; Severity: warning
-    @(125.0500 mm, 116.5000 mm): Footprint R97
-[hole_clearance]: Hole clearance violation (board setup constraints hole clearance 0.2500 mm; actual 0.1944 mm)
-    Rule: board setup constraints hole; Severity: error
-    @(125.1100 mm, 142.5250 mm): NPTH pad of J5
-    @(124.8000 mm, 141.4500 mm): Pad A1 [GND] of J5 on F.Cu
 [hole_clearance]: Hole clearance violation (board setup constraints hole clearance 0.2500 mm; actual 0.1944 mm)
     Rule: board setup constraints hole; Severity: error
     @(125.1100 mm, 142.5250 mm): NPTH pad of J5
     @(124.8000 mm, 141.4500 mm): Pad B12 [GND] of J5 on F.Cu
+[hole_clearance]: Hole clearance violation (board setup constraints hole clearance 0.2500 mm; actual 0.1944 mm)
+    Rule: board setup constraints hole; Severity: error
+    @(125.1100 mm, 142.5250 mm): NPTH pad of J5
+    @(124.8000 mm, 141.4500 mm): Pad A1 [GND] of J5 on F.Cu
 [hole_clearance]: Hole clearance violation (board setup constraints hole clearance 0.2500 mm; actual 0.1944 mm)
     Rule: board setup constraints hole; Severity: error
     @(130.8900 mm, 142.5250 mm): NPTH pad of J5

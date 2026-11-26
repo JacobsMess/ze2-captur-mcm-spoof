@@ -14,7 +14,7 @@ board sits between the MCM and the new pack and makes the MCM believe it still h
 - **Stage 2 (later):** 68S, about 260 V, MCM removed, ZombieVerter VCU + Toyota inverter. The board is then
   only a CAN gateway; its HV side is not used.
 
-Status: v0.6, designed, simulated, not built. One AI review has been folded in already (v0.6 in the git log). The designer is not an electronics engineer. The design was
+Status: v0.7, designed, simulated, not built. Two AI reviews have been folded in already (v0.6 and v0.7 in the git log). The designer is not an electronics engineer. The design was
 produced with an AI assistant, so assume nothing has been checked by a human expert.
 
 ## The board
@@ -32,8 +32,8 @@ ESP32-S3-WROOM-1 module, 4-layer, 120 x 98 mm, parts on top, made and assembled 
 | Cell taps | A 16-resistor divider across the real pack bus gives the MCM nine balanced "block" voltages. Two optoMOS connect it; unpowered = taps float = MCM faults safely | 47k 0.1 %, AQV214EH x2 |
 | Bus sense | Isolated measurement of the pack bus voltage for precharge and weld checks | AMC3311 (isolated amplifier with its own isolated supply) |
 | Analog island | Fakes the three NTC temperature inputs and adds a small offset to the Hall current-sensor signal (steers the MCM's own SOC count). Runs from the MCM's 5 V sensor supply, I2C-isolated from the rest | MCP4728 DAC, MCP6004, ADS1115 x2, ISO1540 |
-| Contactor drive | Drives the Captur pack's precharge and main contactors and its BMS 12 V feed | VND7050AJ high-side x2; low-side master FET driven by an enable latch |
-| Watchdog latch | Each watchdog kick (WDI edge) clocks MCU_EN into a D flip-flop whose Q drives the master FET. A watchdog timeout clears the flip-flop and it stays off until firmware re-arms; an RC gives a power-on clear | TPS3431, SN74LVC1G74 |
+| Contactor drive | Drives the Captur pack's precharge and main contactors and its BMS 12 V feed | VND7050AJ high-side x2; low-side master FET driven by an enable latch through a 5 V gate buffer |
+| Watchdog latch | Each watchdog kick (WDI edge) clocks MCU_EN into a D flip-flop whose Q drives the master FET. A watchdog timeout clears the flip-flop; firmware that notices its own stall on resume latches a fault before the next kick, so coils never come back on their own. An RC gives a power-on clear | TPS3431, SN74LVC1G74, SN74LV1T34 |
 
 HV strip: right-hand edge, 150 V maximum, separated by a 5.6 mm copper-free band. Only three isolation
 parts cross it (K2, K3, U12), with a short slot under each.
@@ -51,8 +51,13 @@ parts cross it (K2, K3, U12), with a short slot under each.
 
 ## How it behaves
 
-- **Key on:** the board closes the Captur contactors (with precharge) before the MCM looks at the pack,
-  then connects the taps. CAN2-4 start in listen-only.
+- **Key on:** read by the ADC on the board supply, with hysteresis and dwell (a crank dip is not a key-off).
+  The board then closes the Captur contactors before the MCM looks at the pack: weld check of each pole,
+  precharge, main+ with precharge held through pickup, verify. Then it connects the taps. CAN2-4 start in
+  listen-only.
+- **Faults:** a contactor, weld, bus-sense or stall fault is latched until key-off and is a hard trip (taps
+  float, contactors open). A soft trip never starts a close. The BMS pack voltage must agree with the cell
+  range x series count.
 - **Running:** taps follow the real pack; temperatures and SOC offset come from the Captur BMS over CAN1;
   IMA frames are forwarded (and can be modified) between CAN2 and CAN3.
 - **Protection order:** steer SOC first; then float the taps so the MCM faults; last, open the contactors
@@ -63,14 +68,17 @@ parts cross it (K2, K3, U12), with a short slot under each.
 ## Known open items
 
 - Pinouts taken from datasheets but not yet checked by a person: VND7050AJ (custom PowerSSO-16 footprint),
-  TPS3431, SN74LVC1G74, AMC3311, K4 contact map, AQY212GS, H24VNT2B.
+  TPS3431, SN74LVC1G74, SN74LV1T34, AMC3311, K4 contact map, AQY212GS, H24VNT2B.
 - Not stocked at JLC (hand fit): AQV214EH x2, TPS3431, and the five THT connectors. AMC3311 stock is low.
-- HV strip gaps are 0.7 mm or more (IPC-2221 B2 uncoated, 101-150 V, wants 0.6 mm); conformal coating planned.
+- Full-bus gaps (BUS_P side to the bus-negative side) are held to 0.7 mm by a DRC rule; IPC-2221 B2 asks
+  0.6 mm uncoated at 101-150 V. Conformal coating planned.
+- Coil and pump currents are not yet measured; that copper is 1.0 mm where it fits, down to 0.5 mm.
+- Captur CAN IDs and the Honda SOC decode are placeholders until logged.
 - Unknowns about the car: MCM tap input impedance and timing, NTC pull-ups, Hall sensor zero and scale,
   IMA bus load and terminations. These get measured before anything is connected.
 - The bus-sense divider uses 1 % parts; its ratio is trimmed in firmware (`HV_DIV_X1000`).
 - Firmware has only run in simulation (ESP32-S3 QEMU with modelled CAN controllers): no frames lost at
-  any bus load, CAN core 22-71 % at realistic loads.
+  realistic loads, CAN core 22-70 %; at the edge with every bus saturated on the slow CPU model.
 
 ## What to review
 
@@ -102,3 +110,4 @@ For each finding give: where (part reference, net or file:line), what is wrong, 
 | `firmware/main/` | ESP-IDF firmware (`config.h` pins and limits, `safety.c`, `contactors.c`, `gateway.c`, `mcp2518fd.c`) |
 | `firmware/README.md` | Firmware structure and simulation results |
 | `tests/` | Automated checks on the netlist, board, JLC files and firmware-hardware parity |
+| `tests/host/` | The firmware's safety chain compiled for the PC and run through fault scenarios |

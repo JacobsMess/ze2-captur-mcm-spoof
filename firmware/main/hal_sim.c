@@ -22,16 +22,18 @@ static int32_t s_bus_mv;
 void board_hal_init(void) {}
 void hal_set_can_task(void *t) { sim_set_can_task(t); }
 
-void hal_spi_xfer(int chip, const uint8_t *tx, uint8_t *rx, size_t len)
+bool hal_spi_xfer(int chip, const uint8_t *tx, uint8_t *rx, size_t len)
 {
     int64_t until = esp_timer_get_time() + SPI_OVERHEAD_US + (int64_t)(len * SPI_NS_PER_BYTE + 999) / 1000;
     sim_model_spi(chip, tx, rx, len);
     while (esp_timer_get_time() < until) { }
+    return true;
 }
 
 bool hal_mcp_int_asserted(int chip) { return sim_model_int(chip); }
 bool hal_twai_receive(can_frame_t *f) { return sim_twai_pop(f); }
 bool hal_twai_send(const can_frame_t *f) { return true; }
+bool hal_twai_ok(void) { return true; }
 
 void hal_out(hal_out_t o, bool on)
 {
@@ -39,7 +41,7 @@ void hal_out(hal_out_t o, bool on)
     if (o == OUT_RELAY_SPLIT) g_sim_relay_split = on;
 }
 
-bool hal_ignition_on(void) { return true; }
+bool hal_vbat_mv(int32_t *mv) { *mv = 13800; return true; }
 void hal_pump_pwm(float duty) {}
 
 bool hal_dac_write4(const uint16_t code[4])
@@ -55,17 +57,18 @@ bool hal_adc_island(int dev, int ch, int32_t *mv)
     return true;
 }
 
-int32_t hal_bus_mv(void)
+bool hal_bus_mv(int32_t *out)
 {
     // bus side of the Captur contactors: RC charge through the precharge resistor (tau 150 ms), instant
     // through the main contactor, slow bleed when open
-    const int32_t pack = 130000;
+    const int32_t pack = 125000;   // matches the simulated BMS frames (34 x 3.68 V)
     int64_t now = esp_timer_get_time();
     float dt = (now - s_bus_t) / 1e6f;
     s_bus_t = now;
     if (s_out[OUT_HS_MAINN] && s_out[OUT_HS_MAINP]) s_bus_mv = pack;
     else if (s_out[OUT_HS_MAINN] && s_out[OUT_HS_PRE]) s_bus_mv += (int32_t)((pack - s_bus_mv) * (dt / 0.15f > 1 ? 1 : dt / 0.15f));
     else s_bus_mv -= (int32_t)(s_bus_mv * (dt / 5.0f > 1 ? 1 : dt / 5.0f));
-    return s_bus_mv;
+    *out = s_bus_mv;
+    return true;
 }
 #endif

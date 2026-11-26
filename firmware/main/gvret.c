@@ -8,11 +8,11 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "net.h"
+#include "safety.h"
 #include "stats.h"
 
 static const char *TAG = "gvret";
 static bool s_binary;
-static bool s_allow_tx = true;   // frames from SavvyCAN; CAN2-4 can't transmit anyway until their jumpers close
 
 size_t gvret_encode(const void *frame, uint8_t *o)
 {
@@ -40,7 +40,7 @@ static void handle_cmd(const uint8_t *b, int n)
     uint8_t r[40];
     switch (b[1]) {
     case 0x00: {   // send frame: F1 00 id(4) bus len data
-        if (n < 8 || !s_allow_tx) return;
+        if (n < 8 || !safety_ota_allowed()) return;   // read-only unless ignition off and contactors open
         can_frame_t f = {0};
         uint32_t id;
         memcpy(&id, &b[2], 4);

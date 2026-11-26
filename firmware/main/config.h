@@ -14,8 +14,8 @@
 // ---------------------------------------------------------------- GPIO (module pin -> GPIO)
 #define PIN_TWAI_TX      4   // pin 4  CAN1 (EV bus) TJA1051
 #define PIN_TWAI_RX      5   // pin 5
-#define PIN_WDI          6   // pin 6  TPS3431 window watchdog kick
-#define PIN_MCU_EN       7   // pin 7  firmware half of the contactor master enable (AND with WDO)
+#define PIN_WDI          6   // pin 6  TPS3431 watchdog kick; also U10 latch clock
+#define PIN_MCU_EN       7   // pin 7  U10 latch D: contactor master enable, clocked in by WDI
 #define PIN_HS_PRE       15  // pin 8  VND7050 precharge contactor
 #define PIN_HS_MAINP     16  // pin 9  VND7050 main + contactor
 #define PIN_HS_MAINN     17  // pin 10 VND7050 main - contactor
@@ -23,7 +23,7 @@
 #define PIN_I2C_SDA      8   // pin 12
 #define PIN_CAN3_INT     3   // pin 15 MCP2518FD U18 (PCM side of the IMA bus)
 #define PIN_SPI_CS3      9   // pin 17
-#define PIN_IG_SENSE     10  // pin 18 ignition sense (high = key on)
+#define PIN_IG_SENSE     10  // pin 18 board supply / 5.545 on ADC1 ch9 (ignition)
 #define PIN_SPI_MOSI     11  // pin 19
 #define PIN_SPI_SCK      12  // pin 20
 #define PIN_SPI_MISO     13  // pin 21
@@ -35,14 +35,14 @@
 #define PIN_SPI_CS2      39  // pin 32
 #define PIN_OPTO_EN      41  // pin 34 tap-divider optoMOS K2/K3
 #define PIN_RELAY_SPLIT  42  // pin 35 K4 bypass relay + U22 photoMOS (energised = IMA bus split)
-#define PIN_AMC_P        1   // pin 39 AMC1311 output + (ADC1 ch0)
-#define PIN_AMC_N        2   // pin 38 AMC1311 output - (ADC1 ch1)
+#define PIN_AMC_P        1   // pin 39 AMC3311 output + (ADC1 ch0)
+#define PIN_AMC_N        2   // pin 38 AMC3311 output - (ADC1 ch1)
 
 // ---------------------------------------------------------------- buses
 typedef enum { BUS_EV = 0, BUS_MCM = 1, BUS_PCM = 2, BUS_DASH = 3, BUS_COUNT = 4 } bus_id_t;
 #define CAN_BITRATE        500000
 #define MCP_SPI_HZ         16000000   // MCP2518FD: <= 0.85 x SYSCLK/2 = 17 MHz; 80 MHz / 5 on the S3
-#define HV_DIV_X1000       86106      // (400k + 4.7k) / 4.7k; calibrate per board
+#define HV_DIV_X1000       86532      // (1k + 400k + 4.7k + 1k) / 4.7k incl. RF3/RF4; calibrate per board
 #define MCP_OSC_HZ         40000000   // SYSCLK = crystal, PLL off
 
 // ---------------------------------------------------------------- analog island (I2C)
@@ -51,6 +51,9 @@ typedef enum { BUS_EV = 0, BUS_MCM = 1, BUS_PCM = 2, BUS_DASH = 3, BUS_COUNT = 4
 #define ADS1115_A_ADDR     0x48       // readback: NTC lines, Hall in/out
 #define ADS1115_B_ADDR     0x49       // readback: MCM 5 V, tap divider check
 #define DAC_CH_OFFSET      3
+#define AMC_CM_MIN_MV      1200       // AMC3311 output common mode 1.39-1.49 V, plus ADC error
+#define AMC_CM_MAX_MV      1700
+#define AMC_DIFF_MIN_MV    (-50)      // below: fail-safe output (HV side unpowered) or a fault
 #define OFFSET_GAIN        0.05f      // summer: Vout = Vhall + 0.05 * (Vdac - Vmid)
 #define OFFSET_MAX_MV      125.0f
 
@@ -64,10 +67,26 @@ typedef enum { BUS_EV = 0, BUS_MCM = 1, BUS_PCM = 2, BUS_DASH = 3, BUS_COUNT = 4
 #define PACK_MAX_TEMP_C    55
 #define PRECHARGE_PCT      90         // bus must reach this % of pack voltage
 #define PRECHARGE_TIMEOUT_MS 3000
+#define DEAD_BUS_MV        20000      // below this the link counts as dead (weld checks)
+#define WELD_CHECK_MS      200        // each pole energised alone this long, link must stay dead
+#define MAIN_PICKUP_MS     100        // precharge held this long after main+ is commanded
+#define CLOSE_VERIFY_MS    100        // then link must be >= CLOSED_MIN_PCT of pack
+#define CLOSED_MIN_PCT     95
+#define BUS_COLLAPSE_PCT   70         // closed, link below this % of pack: fault
+#define PACK_TOL_PCT       3          // pack V vs series x cell range: 3 % + 2 V
+#define PACK_TOL_MV        2000
+
+// ---------------------------------------------------------------- ignition (board supply after D7)
+#define VBAT_DIV_X1000     5545       // (100k + 22k) / 22k
+#define IGN_ON_MV          9000       // key-on above this for IGN_ON_MS
+#define IGN_ON_MS          100
+#define IGN_OFF_MV         6000       // key-off below this for IGN_OFF_MS (rides through a crank dip)
+#define IGN_OFF_MS         2000
 
 // ---------------------------------------------------------------- timing
 #define CONTROL_PERIOD_MS  10
-#define WDI_PERIOD_MS      100        // TPS3431 kick, inside its open window
+#define WDI_PERIOD_MS      100        // TPS3431 kick: one rising edge per period (timeout 1.36 s min)
+#define WDT_STALL_MS       600        // loop gap this long with coils energised: latched fault
 #define BUS_SILENT_MS      500        // IMA half quiet this long -> drop back to bypass
 #define BMS_TIMEOUT_MS     500        // Captur BMS quiet this long -> hard trip
 

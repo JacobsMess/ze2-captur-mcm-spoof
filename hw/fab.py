@@ -36,6 +36,10 @@ def zone(net, layer, pts, prio=0, clearance=0.3, min_w=0.25):
     return z
 
 
+# planes are (re)made here: drop any left in the input by an earlier fab pass, or they end up doubled
+for z in list(b.Zones()):
+    if z.GetNetname() in ("GND", "ISLGND"):
+        b.Delete(z)
 LV = [(0.3, 0.3), (85.2, 0.3), (85.2, 97.7), (0.3, 97.7)]
 ISLAND = [(45.5, 0.5), (80.6, 0.5), (80.6, 30.8), (70.5, 30.8), (70.5, 28.0), (51.5, 28.0), (51.5, 19.5), (45.5, 19.5)]
 zone("GND", pcbnew.In1_Cu, LV, prio=0)
@@ -84,7 +88,7 @@ for ref, p in sorted(parts.items(), key=lambda kv: (kv[0].rstrip("0123456789"), 
     groups.setdefault(key, dict(refs=[], notes=set()))["refs"].append(ref)
     if p.get("note"):
         groups[key]["notes"].add(p["note"])
-cost = dict(parts=0.0, ext=set(), ext_tht=set(), glob=[], cls={})
+cost = dict(parts=0.0, ext=set(), ext_tht=set(), basic=set(), glob=[], cls={})
 with open(os.path.join(OUTDIR, "bom.csv"), "w", newline="") as fh:
     w = csv.writer(fh)
     w.writerow(["Comment", "Designator", "Footprint", "LCSC Part #", "Qty", "Class", "MPN", "Unit USD", "Notes"])
@@ -97,19 +101,24 @@ with open(os.path.join(OUTDIR, "bom.csv"), "w", newline="") as fh:
             cost["glob"].append(f"{mpn} (~${usd * len(g['refs']):.0f})")
         if cls == "E":
             (cost["ext_tht"] if tht else cost["ext"]).add(lcsc)
+        if cls == "B" and not tht:
+            cost["basic"].add(lcsc)
         cost["parts"] += usd * len(g["refs"])
         cost["cls"][cls] = cost["cls"].get(cls, 0) + 1
         w.writerow([val, ",".join(g["refs"]), fpn, lcsc, len(g["refs"]), cls, mpn, f"{usd:.3f}", "; ".join(notes)])
-fee = jlc_parts.EXT_FEE
+econ, std = jlc_parts.ECON_EXT_FEE, jlc_parts.STD_FEEDER_FEE
+n_ext, n_b = len(cost["ext"]), len(cost["basic"])
 with open(os.path.join(OUTDIR, "cost.md"), "w") as fh:
     fh.write("# One-board cost estimate (JLC assembly)\n\n"
-             "LCSC unit prices from `hw/jlc_parts.py`; fees are JLC's standard-assembly figures. PCB fabrication and\n"
-             "shipping are not included. JLC fits the ESP32-S3-WROOM-1 with Standard assembly only; fit it by hand to\n"
-             "keep the order on Economic assembly.\n\n"
+             "LCSC unit prices from `hw/jlc_parts.py`; loading fees per JLC's published schedule (Economic: per\n"
+             "Extended type; Standard: per Basic or Extended type). Setup, stencil, PCB fabrication and shipping are\n"
+             "not included: compare complete quotes for both services. JLC fits the ESP32-S3-WROOM-1 with Standard\n"
+             "assembly only; fit it by hand to keep the order on Economic assembly.\n\n"
              "| Item | USD |\n|---|---|\n"
              f"| Parts, one board (all lines) | {cost['parts']:.2f} |\n"
-             f"| Extended-part fees, {len(cost['ext'])} SMT types x ${fee:.0f} | {len(cost['ext']) * fee:.0f} |\n"
-             f"| Extended-part fees, {len(cost['ext_tht'])} THT connectors (skip: fit them by hand) | {len(cost['ext_tht']) * fee:.0f} |\n\n"
+             f"| Loading fees, Economic: {n_ext} Extended SMT types x ${econ} | {n_ext * econ:.0f} |\n"
+             f"| Loading fees, Standard: {n_ext + n_b} Basic + Extended SMT types x ${std} | {(n_ext + n_b) * std:.0f} |\n"
+             f"| THT connectors, {len(cost['ext_tht'])} types (fit by hand) | - |\n\n"
              f"BOM lines by class: " + ", ".join(f"{k} {v}" for k, v in sorted(cost['cls'].items())) +
              " (B basic, P preferred, E extended, G not at JLC)\n\n"
              f"Not stocked at JLC: {', '.join(cost['glob'])}. JLC global sourcing can buy them, or fit by hand.\n")

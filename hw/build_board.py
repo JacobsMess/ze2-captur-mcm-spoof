@@ -228,7 +228,7 @@ c("C24", "100n", "VCOIL", "GND", (28.0, 76.0), 90)
 c("C25", "10u 50V", "VCOIL", "GND", (26.0, 58.0), 90, fp=C1206)
 part("Q2", ("Package_TO_SOT_SMD", "TO-252-2"), "NCE6020AK", "NCE6020AK",
      {"1": "Q2_G", "2": "COIL_RTN", "3": "GND"}, (45.0, 70.0), 0)
-r("R16", "100", "MASTER_EN", "Q2_G", (40.0, 64.0), 90)
+r("R16", "100", "Q2_DRV", "Q2_G", (40.0, 64.0), 90)
 r("R17", "100k", "Q2_G", "GND", (40.0, 76.0), 90)
 part("D2", ("Diode_SMD", "D_SMB"), "SMBJ33A", "SMBJ33A", {"1": "COIL_RTN", "2": "GND"}, (45.0, 77.0), 0)
 part("U10", ("Package_SO", "VSSOP-8_2.3x2mm_P0.5mm"), "74LVC1G74", "SN74LVC1G74DCUR",
@@ -242,12 +242,20 @@ part("U11", ("Package_SON", "VSON-8-1EP_3x3mm_P0.65mm_EP1.65x2.4mm"), "TPS3431-Q
 r("R19", "100k", "+3V3", "WDT_OK", (44.0, 54.0), 0)   # WDO pull-up; with C27 also the latch's power-on clear
 c("C27", "100n", "WDT_OK", "GND", (48.0, 58.0), 90)
 c("C28", "100n", "+3V3", "GND", (48.0, 62.0), 90)
+# 3.3 V logic -> 5 V gate drive: the NCE6020AK is only specified from VGS = 4.5 V (VGS(th) up to 2.5 V)
+SC70 = ("Package_TO_SOT_SMD", "SOT-353_SC-70-5")
+part("U23", SC70, "SN74LV1T34", "SN74LV1T34DCKR", {"1": "NC_U23", "2": "MASTER_EN", "3": "GND", "4": "Q2_DRV", "5": "+5V"},
+     (43.5, 64.8), 0)
+c("C49", "100n", "+5V", "GND", (42.6, 62.3), 0, fp=("Capacitor_SMD", "C_0603_1608Metric"))
 # pump
 part("Q3", ("Package_TO_SOT_SMD", "TO-252-2"), "NCE6020AK", "NCE6020AK",
      {"1": "Q3_G", "2": "PUMP_N", "3": "GND"}, (55.0, 70.0), 0)
-r("R20", "100", "PUMP_PWM", "Q3_G", (51.0, 64.0), 90)
+r("R20", "100", "Q3_DRV", "Q3_G", (51.0, 64.0), 90)
 r("R21", "100k", "Q3_G", "GND", (51.0, 76.0), 90)
 part("D6", ("Diode_SMD", "D_SMA"), "SS54", "SS54", {"1": "VCOIL", "2": "PUMP_N"}, (56.0, 77.0), 180)
+part("U24", SC70, "SN74LV1T34", "SN74LV1T34DCKR", {"1": "NC_U24", "2": "PUMP_PWM", "3": "GND", "4": "Q3_DRV", "5": "+5V"},
+     (56.6, 64.8), 0)
+c("C50", "100n", "+5V", "GND", (56.6, 62.4), 0, fp=("Capacitor_SMD", "C_0603_1608Metric"))
 
 # ---------------------------------------------------------------- analog island (sheet 4)
 part("U13", SOIC8, "ISO1540", "ISO1540DR",
@@ -312,7 +320,8 @@ r("R50", "100", "AMC_OUTP", "AMC_P", (80.0, 34.0), 90)
 r("R51", "100", "AMC_OUTN", "AMC_N", (82.0, 34.0), 90)
 c("C37", "10n", "AMC_P", "GND", (80.0, 38.0), 90)
 c("C38", "10n", "AMC_N", "GND", (82.0, 38.0), 90)
-c("C39", "100n", "+5V", "GND", (82.0, 24.0), 90, fp=("Capacitor_SMD", "C_0603_1608Metric"))
+c("C39", "1n", "+5V", "GND", (82.0, 24.0), 90, fp=("Capacitor_SMD", "C_0603_1608Metric"))   # at VDD2 (pin 12)
+c("C48", "1u", "GND", "+5V", (82.5, 26.0), 0, fp=("Capacitor_SMD", "C_0603_1608Metric"))   # TI: 1 nF at the pin + 1 uF near
 for ref, y, en_net in (("K2", 46.0, "K2_LED"), ("K3", 58.0, "K3_LED")):
     top = ("DIV_TOP_IN", "DIV_TOP") if ref == "K2" else ("DIV_BOT", "DIV_BOT_IN")
     part(ref, ("Package_DIP", "SMDIP-6_W7.62mm"), "AQV214EH", "Panasonic AQV214EHAX (400 V)",
@@ -470,6 +479,10 @@ for ref, (pos, rot) in MOVES.items():
     if ref in PARTS:
         PARTS[ref]["pos"], PARTS[ref]["rot"] = pos, rot
 
+# v0.7 (second review): RF1 up 0.5 mm so BUS_P keeps >= 0.7 mm from C45 (the bus-negative side)
+MOVES.update({"RF1": ((93.5, 8.5), 90)})
+PARTS["RF1"]["pos"], PARTS["RF1"]["rot"] = MOVES["RF1"]
+
 # ================================================================== build
 def mm(x, y):
     return pcbnew.VECTOR2I(pcbnew.FromMM(OX + x), pcbnew.FromMM(OY + y))
@@ -550,7 +563,7 @@ def build(path):
         t.SetTextThickness(pcbnew.FromMM(size * 0.15))
         board.Add(t)
     silk("HV <=150V DANGER", 104.0, 96.0, 1.5)
-    silk("ZE2 LiB MCM SPOOF v0.6", 96.0, 91.5, 1.0)
+    silk("ZE2 LiB MCM SPOOF v0.7", 96.0, 91.5, 1.0)
     silk("ANALOG ISLAND", 66.0, 2.0, 1.0)
     rect(90.5, 1.0, 119.0, 97.0, layer=pcbnew.F_SilkS, width=0.25)
 

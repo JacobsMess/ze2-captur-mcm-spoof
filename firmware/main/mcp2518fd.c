@@ -85,7 +85,7 @@ static mcp_t s_mcp[MCP_COUNT];
 static inline void xfer(int chip, const uint8_t *tx, uint8_t *rx, size_t n)
 {
     int64_t t0 = esp_timer_get_time();
-    hal_spi_xfer(chip, tx, rx, n);
+    if (!hal_spi_xfer(chip, tx, rx, n)) s_mcp[chip].st.spi_err++;
     s_mcp[chip].st.spi_us += (uint32_t)(esp_timer_get_time() - t0);
 }
 

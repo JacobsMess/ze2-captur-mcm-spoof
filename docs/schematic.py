@@ -128,8 +128,10 @@ def sheet2(path):
         d += (q := elm.NFet(bulk=False).anchor("drain").down())
         d += elm.Ground().at(q.source)
         note(d, (q.drain[0] + 0.6, q.drain[1] - 0.2), "Q2 master\nlow-side FET", 8)
-        g = ic(d, (q.gate[0] - 5.0, q.gate[1] - 1.8), 2.4, 2.2, "U10 74LVC1G74 D-FF", left=("D", "CLK", "CLR"), right=("Q",), lab_loc="bottom")
-        wire(d, g.Q, q.gate, "-|")
+        buf = ic(d, (q.gate[0] - 3.2, q.gate[1] - 0.5), 1.8, 1.0, "U23 LV1T34\n3.3->5 V", left=("A",), right=("Y",), lab_loc="bottom")
+        wire(d, buf.Y, q.gate, "-|")
+        g = ic(d, (buf.A[0] - 4.4, buf.A[1] - 1.3), 2.4, 2.2, "U10 74LVC1G74 D-FF", left=("D", "CLK", "CLR"), right=("Q",), lab_loc="bottom")
+        wire(d, g.Q, buf.A, "-|")
         d += elm.Line().at(g.D).left(1.4).label("MCU_EN", "left")
         d += elm.Line().at(g.CLK).left(1.4).label("WDI (MCU kick)", "left")
         wd = ic(d, (g.CLR[0] - 5.6, g.CLR[1] - 2.8), 2.4, 1.6, "U11 TPS3431\nwatchdog", left=("WDI",), right=("WDO",), lab_loc="bottom")
@@ -138,7 +140,8 @@ def sheet2(path):
 
         note(d, (0, -14.5),
              "Every coil needs BOTH its high-side command AND the low-side master enable (MASTER_EN = latched MCU_EN).\n"
-             "WDI edges clock MCU_EN into U10; a WDT timeout clears it and it stays off until firmware re-arms. C27 = power-on clear.\n"
+             "WDI edges clock MCU_EN into U10; a WDT timeout clears it. A stall seen on resume is a latched fault (key-off clears). C27 = power-on clear.\n"
+             "U23/U24 SN74LV1T34 on +5 V: the NCE6020AK gates get 5 V (RDS(on) is specified from 4.5 V).\n"
              "VND7050AJ: current limit, thermal shutdown, ~-40V internal clamp = fast-decay coil, fast contact opening.\n"
              "MultiSense to 1k (unused), SEn/SEL to GND: contactor state is verified by the isolated bus-voltage sense (sheet 3). No plain flyback diodes on coils.")
 
@@ -146,13 +149,13 @@ def sheet2(path):
         d += elm.Line().right(2)
         d += (p1 := elm.Dot())
         d += elm.Line().right(2).label("J2 PUMP+", "right")
-        d += elm.Diode().at(p1.center).down(2.2).reverse().label("D3 SS54", "left")
+        d += elm.Diode().at(p1.center).down(2.2).reverse().label("D6 SS54", "left")
         d += (p2 := elm.Dot())
         d += elm.Line().right(2).label("J2 PUMP-", "right")
         d += (qp := elm.NFet(bulk=False).at(p2.center).anchor("drain").down().reverse())
         d += elm.Ground().at(qp.source)
-        d += elm.Line().at(qp.gate).left(1.0).label("PUMP_PWM", "left")
-        note(d, (p2.center[0] + 0.6, p2.center[1] - 0.7), "Q3 60V logic FET", 8)
+        d += elm.Line().at(qp.gate).left(1.0).label("PUMP_PWM via U24 (5 V)", "left")
+        note(d, (p2.center[0] + 0.6, p2.center[1] - 0.7), "Q3 NCE6020AK", 8)
         note(d, (11, -18.5),
              "Option B (DNP): K1 12V relay, NO contact in series with MCM IG1\n"
              "(J1 IG1_IN -> IG1_OUT). Closed by firmware only after pack is up.")
@@ -204,7 +207,7 @@ def sheet3(path):
         d += elm.Line().at(amc.VDD1).up(1.4)
         note(d, (13.0, amc.VDD1[1] + 2.4), "HV side powered\ninternally (HV5V)", 8)
         d += elm.Line().at(amc.VDD2).up(1.4)
-        note(d, (amc.VDD2[0] + 0.2, amc.VDD2[1] + 2.4), "+5V (LV side)", 8)
+        note(d, (amc.VDD2[0] + 0.2, amc.VDD2[1] + 2.4), "+5V (LV side)\nC39 1n at pin, C48 1u", 8)
         note(d, (12, -8.5),
              "Bus 0-172V -> 0-2.0V (1% parts, ratio trimmed in firmware). Uses: precharge complete (>=95% of BMS sum),\n"
              "weld check (<20V 500ms after open), BMS sum cross-check (5%).\n\n"

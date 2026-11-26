@@ -6,7 +6,7 @@
 typedef void (*mcp_rx_cb_t)(int chip, const can_frame_t *f);
 
 typedef struct {
-    uint32_t rx, tx, rx_overflow, tx_queue_drop, errors, spi_us;
+    uint32_t rx, tx, rx_overflow, tx_queue_drop, errors, spi_us, spi_err;
 } mcp_stats_t;
 
 bool mcp_init(int chip, bool listen_only);

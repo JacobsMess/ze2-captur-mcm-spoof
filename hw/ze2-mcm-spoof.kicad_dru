@@ -1,0 +1,4 @@
+(version 1)
+(rule "HV full bus: BUS_P side to bus-negative side"
+  (condition "(A.NetName == 'BUS_P*' || A.NetName == 'DIV_TOP*') && B.NetClass == 'HVLOW'")
+  (constraint clearance (min 0.7mm)))

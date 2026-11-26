@@ -50,12 +50,18 @@ def test_crystal_load_caps_suit_the_crystal(parts):
         assert abs(float(parts[c]["val"].rstrip("p")) - want) / want < 0.15, c
 
 
+def ohms(v):
+    v = v.split()[0]
+    return float(v.rstrip("k")) * (1000 if v.endswith("k") else 1)
+
+
 def test_hv_divider_scale_matches_firmware(parts):
-    k = lambda v: float(v.rstrip("k")) * (1000 if v.endswith("k") else 1)
-    top = sum(k(parts[f"RS{i}"]["val"]) for i in range(1, 5))
-    bot = k(parts["RS5"]["val"])
-    assert abs(CFG["HV_DIV_X1000"] - 1000 * (top + bot) / bot) < 5
-    assert 2.0 * (top + bot) / bot > 4.2 * 34 + 10, "full scale must clear a full 34S pack with margin"
+    # the whole string carries the same current: RF3 + RS1-RS4 above the sensed RS5, RF4 below it
+    top = ohms(parts["RF3"]["val"]) + sum(ohms(parts[f"RS{i}"]["val"]) for i in range(1, 5))
+    bot = ohms(parts["RS5"]["val"])
+    total = top + bot + ohms(parts["RF4"]["val"])
+    assert abs(CFG["HV_DIV_X1000"] - 1000 * total / bot) < 5
+    assert 2.0 * total / bot > 4.2 * 34 + 10, "full scale must clear a full 34S pack with margin"
 
 
 def test_spi_and_twai_config_fit_the_hardware():
@@ -72,3 +78,19 @@ def test_bms_data_freshness_is_per_group():
     assert "for (int g = 0; g < GRP_COUNT; g++)" in src
     z = (MAIN / "zombie.c").read_text()
     assert "captur_fresh(now_ms) && g_safety.level < SAFE_SOFT_TRIP" in z
+
+
+def test_analog_inputs_are_on_adc1(parts):
+    # ADC1 (GPIO1-10) works alongside Wi-Fi; ADC2 does not
+    for name in ("PIN_IG_SENSE", "PIN_AMC_P", "PIN_AMC_N"):
+        assert 1 <= CFG[name] <= 10, name
+    hw = (MAIN / "hal_hw.c").read_text()
+    assert f"ADC_CHANNEL_{CFG['PIN_IG_SENSE'] - 1}" in hw, "IG_SENSE GPIO10 is ADC1 channel 9"
+    r3, r4 = ohms(parts["R3"]["val"]), ohms(parts["R4"]["val"])
+    assert abs(CFG["VBAT_DIV_X1000"] - 1000 * (r3 + r4) / r4) < 5
+    assert 16000 * r4 / (r3 + r4) < 3100, "16 V supply must stay inside the 12 dB ADC range"
+
+
+def test_control_loop_kicks_watchdog_first():
+    body = (MAIN / "main.c").read_text().split("for (;;) {", 1)[1]
+    assert body.index("contactors_kick_watchdog") < body.index("xQueueReceive"), "stall check before anything else"

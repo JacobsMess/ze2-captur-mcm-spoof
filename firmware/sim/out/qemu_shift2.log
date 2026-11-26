@@ -1,3 +1,4 @@
+Adding SPI flash device
 ESP-ROM:esp32s3-20210327
 Build:Mar 27 2021
 rst:0x1 (POWERON),boot:0x4 (SPI_FLASH_BOOT)
@@ -9,7 +10,7 @@ load:0x403c8704,len:0xd24
 load:0x403cb700,len:0x2f2c
 entry 0x403c8928
 I (39) boot: ESP-IDF v5.4.4 2nd stage bootloader
-I (39) boot: compile time Nov 25 2026 21:50:40
+I (39) boot: compile time Nov 26 2026 06:23:21
 I (39) boot: Multicore bootloader
 I (44) boot: chip revision: v0.0
 I (44) boot: efuse block revision: v0.0
@@ -26,12 +27,12 @@ I (47) boot:  3 ota_0            OTA app          00 10 00020000 003c0000
 I (47) boot:  4 ota_1            OTA app          00 11 003e0000 003c0000
 I (47) boot: End of partition table
 I (49) boot: No factory image, trying OTA 0
-I (49) esp_image: segment 0: paddr=00020020 vaddr=3c020020 size=0b538h ( 46392) map
-I (75) esp_image: segment 1: paddr=0002b560 vaddr=3fc93400 size=02f48h ( 12104) load
-I (93) esp_image: segment 2: paddr=0002e4b0 vaddr=40374000 size=01b68h (  7016) load
-I (99) esp_image: segment 3: paddr=00030020 vaddr=42000020 size=1bd60h (114016) map
-I (125) esp_image: segment 4: paddr=0004bd88 vaddr=40375b68 size=0d81ch ( 55324) load
-I (147) esp_image: segment 5: paddr=000595ac vaddr=50000000 size=0001ch (    28) load
+I (49) esp_image: segment 0: paddr=00020020 vaddr=3c020020 size=0b5c8h ( 46536) map
+I (75) esp_image: segment 1: paddr=0002b5f0 vaddr=3fc93400 size=02f58h ( 12120) load
+I (93) esp_image: segment 2: paddr=0002e550 vaddr=40374000 size=01ac8h (  6856) load
+I (99) esp_image: segment 3: paddr=00030020 vaddr=42000020 size=1c170h (115056) map
+I (125) esp_image: segment 4: paddr=0004c198 vaddr=40375ac8 size=0d8bch ( 55484) load
+I (147) esp_image: segment 5: paddr=00059a5c vaddr=50000000 size=0001ch (    28) load
 I (150) boot: Loaded app from partition at offset 0x20000
 I (150) boot: Set actual ota_seq=1 in otadata[0]
 I (150) boot: Disabling RNG early entropy source...
@@ -43,15 +44,15 @@ I (258) cpu_start: Pro cpu start user code
 I (258) cpu_start: cpu freq: 240000000 Hz
 I (258) app_init: Application information:
 I (258) app_init: Project name:     ze2_spoof
-I (258) app_init: App version:      8aefe56-dirty
-I (258) app_init: Compile time:     Nov 25 2026 21:50:07
-I (258) app_init: ELF file SHA256:  de5da20e3...
+I (258) app_init: App version:      9367515-dirty
+I (258) app_init: Compile time:     Nov 26 2026 06:22:42
+I (258) app_init: ELF file SHA256:  1e92dfe14...
 I (258) app_init: ESP-IDF:          v5.4.4
 I (258) efuse_init: Min chip rev:     v0.0
 I (258) efuse_init: Max chip rev:     v0.99 
 I (258) efuse_init: Chip rev:         v0.0
 I (258) heap_init: Initializing. RAM available for dynamic allocation:
-I (258) heap_init: At 3FCA4FE8 len 00044728 (273 KiB): RAM
+I (258) heap_init: At 3FCA5010 len 00044700 (273 KiB): RAM
 I (258) heap_init: At 3FCE9710 len 00005724 (21 KiB): RAM
 I (258) heap_init: At 3FCF0000 len 00008000 (32 KiB): DRAM
 I (258) heap_init: At 600FE000 len 00001FE8 (7 KiB): RTCRAM
@@ -66,8 +67,9 @@ I (320) gvret: streaming all buses on TCP port 23
 I (320) main_task: Returned from app_main()
 SIM bus clock: 1595 ticks in 200 ms (expect ~1600)
 W (531) gateway: BYPASS -> SPLIT
-I (840) contactors: closed after 295 ms precharge
-SIMRESULT {"scenario":"typical (EV 30%, IMA 40%, dash 30%)","seconds":5.72,"generated":{"ev":6861,"mcm_side":4573,"pcm_side":4573,"dash":6861},"received":{"ev":6861,"mcm":4573,"pcm":4573,"dash":6861},"mcp_rx_overflows":0,"twai_queue_overflows":0,"forwarded":9146,"wire_tx":9148,"tx_drops":0,"fwd_latency_us":{"avg":92,"max":665,"hist_lt":{"100":4543,"200":4394,"400":99,"800":110,"1600":0,"3200":0,"6400":0,"more":0}},"spi_busy_pct":18.1,"can_task_longest_pass_us":1052,"gvret_kbyte_s":112.2,"log_drops":0,"cpu_pct":{"core0_raw":22.2,"core0_minus_sim":18.1,"core1":22.5},"qemu_core1_freeze_max_us":506,"gateway":1,"contactors":2,"safety":0}
-SIMRESULT {"scenario":"busy (EV 60%, IMA 70%, dash 60%)","seconds":5.51,"generated":{"ev":13229,"mcm_side":7717,"pcm_side":7717,"dash":13229},"received":{"ev":13229,"mcm":7717,"pcm":7717,"dash":13229},"mcp_rx_overflows":0,"twai_queue_overflows":0,"forwarded":15434,"wire_tx":15434,"tx_drops":0,"fwd_latency_us":{"avg":94,"max":1597,"hist_lt":{"100":8155,"200":6913,"400":186,"800":161,"1600":19,"3200":0,"6400":0,"more":0}},"spi_busy_pct":32.2,"can_task_longest_pass_us":2647,"gvret_kbyte_s":208.2,"log_drops":0,"cpu_pct":{"core0_raw":34.7,"core0_minus_sim":29.2,"core1":40.4},"qemu_core1_freeze_max_us":505,"gateway":1,"contactors":2,"safety":0}
-SIMRESULT {"scenario":"worst case (all four buses 100%)","seconds":5.32,"generated":{"ev":21265,"mcm_side":10632,"pcm_side":10632,"dash":21265},"received":{"ev":21264,"mcm":10632,"pcm":10632,"dash":21264},"mcp_rx_overflows":0,"twai_queue_overflows":0,"forwarded":21264,"wire_tx":21264,"tx_drops":0,"fwd_latency_us":{"avg":100,"max":1624,"hist_lt":{"100":12048,"200":8369,"400":551,"800":229,"1600":65,"3200":2,"6400":0,"more":0}},"spi_busy_pct":48.6,"can_task_longest_pass_us":4504,"gvret_kbyte_s":320.4,"log_drops":0,"cpu_pct":{"core0_raw":46.0,"core0_minus_sim":38.2,"core1":64.7},"qemu_core1_freeze_max_us":505,"gateway":1,"contactors":2,"safety":0}
+I (1310) contactors: precharged in 338 ms
+SIMRESULT {"scenario":"typical (EV 30%, IMA 40%, dash 30%)","seconds":5.72,"generated":{"ev":6863,"mcm_side":4575,"pcm_side":4575,"dash":6863},"received":{"ev":6863,"mcm":4576,"pcm":4576,"dash":6863},"mcp_rx_overflows":0,"twai_queue_overflows":0,"forwarded":9152,"wire_tx":9152,"tx_drops":0,"fwd_latency_us":{"avg":92,"max":1259,"hist_lt":{"100":4497,"200":4486,"400":93,"800":71,"1600":5,"3200":0,"6400":0,"more":0}},"spi_busy_pct":18.0,"can_task_longest_pass_us":1919,"gvret_kbyte_s":112.1,"log_drops":0,"cpu_pct":{"core0_raw":21.9,"core0_minus_sim":18.1,"core1":22.1},"qemu_core1_freeze_max_us":506,"gateway":1,"contactors":5,"safety":0}
+SIMRESULT {"scenario":"busy (EV 60%, IMA 70%, dash 60%)","seconds":5.52,"generated":{"ev":13242,"mcm_side":7724,"pcm_side":7724,"dash":13242},"received":{"ev":13242,"mcm":7724,"pcm":7724,"dash":13242},"mcp_rx_overflows":0,"twai_queue_overflows":0,"forwarded":15448,"wire_tx":15448,"tx_drops":0,"fwd_latency_us":{"avg":100,"max":1750,"hist_lt":{"100":7560,"200":7349,"400":234,"800":260,"1600":43,"3200":2,"6400":0,"more":0}},"spi_busy_pct":33.7,"can_task_longest_pass_us":2935,"gvret_kbyte_s":208.2,"log_drops":0,"cpu_pct":{"core0_raw":34.4,"core0_minus_sim":28.1,"core1":41.4},"qemu_core1_freeze_max_us":505,"gateway":1,"contactors":5,"safety":0}
+SIMRESULT {"scenario":"worst case (all four buses 100%)","seconds":5.32,"generated":{"ev":21270,"mcm_side":10634,"pcm_side":10634,"dash":21270},"received":{"ev":21268,"mcm":10634,"pcm":10634,"dash":21268},"mcp_rx_overflows":0,"twai_queue_overflows":0,"forwarded":21268,"wire_tx":21270,"tx_drops":0,"fwd_latency_us":{"avg":119,"max":2372,"hist_lt":{"100":9791,"200":10072,"400":704,"800":424,"1600":229,"3200":48,"6400":0,"more":0}},"spi_busy_pct":48.9,"can_task_longest_pass_us":6026,"gvret_kbyte_s":320.6,"log_drops":0,"cpu_pct":{"core0_raw":46.1,"core0_minus_sim":38.0,"core1":63.2},"qemu_core1_freeze_max_us":505,"gateway":1,"contactors":5,"safety":0}
 SIMDONE
+qemu-system-xtensa: terminating on signal 15 from pid 19025 (timeout)

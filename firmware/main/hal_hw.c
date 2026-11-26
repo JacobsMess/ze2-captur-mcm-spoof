@@ -28,6 +28,7 @@ static TaskHandle_t s_can_task;
 static i2c_master_dev_handle_t s_dac, s_adc[2];
 static adc_oneshot_unit_handle_t s_adc1;
 static adc_cali_handle_t s_cali;
+static bool s_twai_ok;
 
 static void IRAM_ATTR int_isr(void *arg)
 {
@@ -46,8 +47,6 @@ void board_hal_init(void)
     gpio_config_t o = {.pin_bit_mask = mask, .mode = GPIO_MODE_OUTPUT};
     gpio_config(&o);
     for (int i = 0; i < OUT_COUNT; i++) gpio_set_level(OUT_PIN[i], 0);
-    gpio_config_t ig = {.pin_bit_mask = 1ULL << PIN_IG_SENSE, .mode = GPIO_MODE_INPUT};
-    gpio_config(&ig);
 
     // SPI: three MCP2518FDs on one bus, polling transactions from the CAN task
     spi_bus_config_t bus = {.mosi_io_num = PIN_SPI_MOSI, .miso_io_num = PIN_SPI_MISO, .sclk_io_num = PIN_SPI_SCK,
@@ -73,8 +72,8 @@ void board_hal_init(void)
     g.tx_queue_len = 32;
     twai_timing_config_t t = TWAI_TIMING_CONFIG_500KBITS();
     twai_filter_config_t f = TWAI_FILTER_CONFIG_ACCEPT_ALL();
-    if (twai_driver_install(&g, &t, &f) == ESP_OK) twai_start();
-    else ESP_LOGE(TAG, "TWAI install failed");
+    s_twai_ok = twai_driver_install(&g, &t, &f) == ESP_OK && twai_start() == ESP_OK;
+    if (!s_twai_ok) ESP_LOGE(TAG, "TWAI start failed");
 
     // I2C to the analog island (through the ISO1540)
     i2c_master_bus_config_t ib = {.i2c_port = 0, .sda_io_num = PIN_I2C_SDA, .scl_io_num = PIN_I2C_SCL,
@@ -89,15 +88,20 @@ void board_hal_init(void)
     dc.device_address = ADS1115_B_ADDR;
     i2c_master_bus_add_device(i2c, &dc, &s_adc[1]);
 
-    // AMC1311 outputs on ADC1 ch0/ch1
+    // ADC1: AMC3311 outputs on ch0/ch1, board supply divider (IG_SENSE) on ch9. A failed init leaves the
+    // handles NULL and every read invalid.
     adc_oneshot_unit_init_cfg_t u = {.unit_id = ADC_UNIT_1};
-    adc_oneshot_new_unit(&u, &s_adc1);
     adc_oneshot_chan_cfg_t cc = {.atten = ADC_ATTEN_DB_12, .bitwidth = ADC_BITWIDTH_DEFAULT};
-    adc_oneshot_config_channel(s_adc1, ADC_CHANNEL_0, &cc);
-    adc_oneshot_config_channel(s_adc1, ADC_CHANNEL_1, &cc);
     adc_cali_curve_fitting_config_t cf = {.unit_id = ADC_UNIT_1, .atten = ADC_ATTEN_DB_12,
                                           .bitwidth = ADC_BITWIDTH_DEFAULT};
-    adc_cali_create_scheme_curve_fitting(&cf, &s_cali);
+    if (adc_oneshot_new_unit(&u, &s_adc1) != ESP_OK ||
+        adc_oneshot_config_channel(s_adc1, ADC_CHANNEL_0, &cc) != ESP_OK ||
+        adc_oneshot_config_channel(s_adc1, ADC_CHANNEL_1, &cc) != ESP_OK ||
+        adc_oneshot_config_channel(s_adc1, ADC_CHANNEL_9, &cc) != ESP_OK ||
+        adc_cali_create_scheme_curve_fitting(&cf, &s_cali) != ESP_OK) {
+        ESP_LOGE(TAG, "ADC1 init failed: bus sense and ignition invalid");
+        s_cali = NULL;
+    }
 
     // coolant pump PWM, 1 kHz
     ledc_timer_config_t lt = {.speed_mode = LEDC_LOW_SPEED_MODE, .duty_resolution = LEDC_TIMER_10_BIT,
@@ -108,10 +112,10 @@ void board_hal_init(void)
     ledc_channel_config(&lc);
 }
 
-void IRAM_ATTR hal_spi_xfer(int chip, const uint8_t *tx, uint8_t *rx, size_t len)
+bool IRAM_ATTR hal_spi_xfer(int chip, const uint8_t *tx, uint8_t *rx, size_t len)
 {
     spi_transaction_t t = {.length = len * 8, .tx_buffer = tx, .rx_buffer = rx};
-    spi_device_polling_transmit(s_spi[chip], &t);
+    return spi_device_polling_transmit(s_spi[chip], &t) == ESP_OK;
 }
 
 bool hal_mcp_int_asserted(int chip) { return gpio_get_level(INT_PIN[chip]) == 0; }
@@ -136,8 +140,9 @@ bool hal_twai_send(const can_frame_t *f)
     return twai_transmit(&m, 0) == ESP_OK;
 }
 
+bool hal_twai_ok(void) { return s_twai_ok; }
+
 void hal_out(hal_out_t o, bool on) { gpio_set_level(OUT_PIN[o], on); }
-bool hal_ignition_on(void) { return gpio_get_level(PIN_IG_SENSE); }
 
 void hal_pump_pwm(float duty)
 {
@@ -170,16 +175,30 @@ bool hal_adc_island(int dev, int ch, int32_t *mv)
     return true;
 }
 
-int32_t hal_bus_mv(void)
+static bool adc_mv(adc_channel_t ch, int *mv)
 {
-    int raw, p = 0, n = 0;
-    adc_oneshot_read(s_adc1, ADC_CHANNEL_0, &raw);
-    adc_cali_raw_to_voltage(s_cali, raw, &p);
-    adc_oneshot_read(s_adc1, ADC_CHANNEL_1, &raw);
-    adc_cali_raw_to_voltage(s_cali, raw, &n);
-    // AMC1311: differential out = input (2 V full scale). Divider RS1-RS4 4 x 100k over RS5 4.7k (1 %):
-    // x86.1, 172 V full scale. Trim HV_DIV_X1000 against a meter on the pack once.
-    int32_t mv = (int32_t)((int64_t)(p - n) * HV_DIV_X1000 / 1000);
-    return mv < 0 ? 0 : mv;
+    int raw;
+    return s_cali && adc_oneshot_read(s_adc1, ch, &raw) == ESP_OK && adc_cali_raw_to_voltage(s_cali, raw, mv) == ESP_OK;
+}
+
+bool hal_bus_mv(int32_t *mv)
+{
+    int p, n;
+    if (!adc_mv(ADC_CHANNEL_0, &p) || !adc_mv(ADC_CHANNEL_1, &n)) return false;
+    // AMC3311: differential out = input (0..2 V), common mode 1.44 V typ. With its HV side unpowered it drives a
+    // large negative differential (fail-safe), which must not read as a dead bus.
+    int cm = (p + n) / 2, diff = p - n;
+    if (cm < AMC_CM_MIN_MV || cm > AMC_CM_MAX_MV || diff < AMC_DIFF_MIN_MV) return false;
+    // divider RF3 + RS1-RS4 + RS5 + RF4 over RS5: x86.5, 173 V full scale. Trim HV_DIV_X1000 against a meter.
+    *mv = diff < 0 ? 0 : (int32_t)((int64_t)diff * HV_DIV_X1000 / 1000);
+    return true;
+}
+
+bool hal_vbat_mv(int32_t *mv)
+{
+    int v;
+    if (!adc_mv(ADC_CHANNEL_9, &v)) return false;
+    *mv = (int32_t)((int64_t)v * VBAT_DIV_X1000 / 1000);
+    return true;
 }
 #endif

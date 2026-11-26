@@ -1,4 +1,4 @@
-"""Write the .kicad_pro with net classes (KiCad 7 format)."""
+"""Write the .kicad_pro with net classes (KiCad 7 format) and the .kicad_dru custom rules."""
 import json, sys
 
 def cls(name, clr, w, vd=0.6, vdr=0.3):
@@ -23,3 +23,12 @@ pro = {
     },
 }
 json.dump(pro, open(sys.argv[1] + ".kicad_pro", "w"), indent=2)
+
+# Full-bus pairs: the BUS_P side against everything tied to the bus-negative side (the AMC3311's HV supply and
+# input, the bottom of the divider). 0.7 mm is the brief's figure (IPC-2221 B2 asks 0.6 mm at 101-150 V uncoated).
+DRU = """(version 1)
+(rule "HV full bus: BUS_P side to bus-negative side"
+  (condition "(A.NetName == 'BUS_P*' || A.NetName == 'DIV_TOP*') && B.NetClass == 'HVLOW'")
+  (constraint clearance (min 0.7mm)))
+"""
+open(sys.argv[1] + ".kicad_dru", "w").write(DRU)

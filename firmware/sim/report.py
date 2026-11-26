@@ -7,13 +7,21 @@ import re
 import sys
 
 SPEED = {"2": "250 MIPS (IPC ~1.0)", "3": "125 MIPS (IPC ~0.5)"}
+SCENARIOS = 3
+CT_CLOSED = 5     # contactors.h: the sim BMS is healthy, so the sequencer must finish closed
 
 
 def load(path):
-    out = []
+    out, done = [], False
     for line in open(path, errors="ignore"):
         if line.startswith("SIMRESULT "):
             out.append(json.loads(line[len("SIMRESULT "):]))
+        done |= line.startswith("SIMDONE")
+    if not done or len(out) != SCENARIOS:
+        sys.exit(f"{path}: incomplete run ({len(out)} of {SCENARIOS} results, SIMDONE {'seen' if done else 'missing'})")
+    bad = [r["scenario"] for r in out if r["contactors"] != CT_CLOSED]
+    if bad:
+        sys.exit(f"{path}: contactors not closed in {bad}")
     return out
 
 
