@@ -83,11 +83,11 @@ def sheet1(path):
         d += elm.Line().at(mcu["USB D+/D-"]).right(1).label("USB-C", "right")
         note(d, (18.8, -5.6),
              "GPIO map: IO4/5 TWAI (CAN1 EV bus), IO11/12/13 SPI,\n"
-             "IO39 CS2 / IO38 INT2 (CAN2 MCM side), IO9 CS3 / IO3 INT3 (CAN3 car side),\n"
+             "IO39 CS2 / IO38 INT2 (CAN2 MCM side), IO36 CS3 / IO3 INT3 (CAN3 car side),\n"
              "IO48 CS4 / IO14 INT4 (CAN4 dash), IO42 RELAY_SPLIT (sheet 5),\n"
              "IO15/16/17/21 HS IN, IO7 MCU_EN, IO6 WDI (sheet 2), IO47 PUMP_PWM,\n"
              "IO41 OPTO_EN, IO1/IO2 AMC3311 P/N (sheet 3), IO8/18 I2C -> ISO1540 (sheet 4),\n"
-             "IO10 IG_SENSE (100k/22k), IO19/20 USB.")
+             "IO10 IG_SENSE (100k/22k), IO9 U8 MultiSense (sheet 2), IO19/20 USB.")
         d.save(path, dpi=DPI, transparent=False)
 
 
@@ -151,7 +151,8 @@ def sheet2(path):
              "R19/C27 = power-on clear; U25 (Schmitt) squares its 10 ms edge for U10's CLR.\n"
              "U23/U24 SN74LV1T34 on +5 V: the NCE6020AK gates get 5 V (RDS(on) is specified from 4.5 V).\n"
              "VND7050AJ: current limit, thermal shutdown, ~-40V internal clamp = fast-decay coil, fast contact opening.\n"
-             "MultiSense to 1k (unused), SEn/SEL to GND: closure is verified by the isolated bus sense (sheet 3): level and no droop with precharge off. No flyback diodes.")
+             "U8 MultiSense ch0 = precharge-coil current: SEn via 15k (R106) to 3V3, SEL0/SEL1 low, 1k (R100) sense, 15k/10n (R105/C52) to IO9.\n"
+             "U9 MultiSense unused (1k to GND, SEn low). Main+ closure is verified by the isolated bus sense (sheet 3). No flyback diodes.")
 
         d += elm.Dot(open=True).at((0, -18.5)).label("VCOIL", "left")
         d += elm.Line().right(2)
@@ -195,7 +196,7 @@ def sheet3(path):
         d += elm.Fuse().down(1.6)
         note(d, (-5.6, 1.2), "F3 50mA 250VDC 4kA (0242.050UR)", 8)
         d += elm.ResistorIEC().down(1.6)
-        note(d, (-5.6, -0.4), "RF1 330R 1W", 8)
+        note(d, (-5.6, -0.4), "RF1 100R 1W", 8)
         d += elm.Switch().down(1.6)
         note(d, (-5.6, -2.0), "K2 AQV214EH 400V (OPTO_EN)", 8)
         d += elm.Line().down(0.4)
@@ -216,7 +217,7 @@ def sheet3(path):
         d += elm.Switch().down(1.6)
         note(d, (-5.6, y_sw - 0.2), "K3 AQV214EH 400V (OPTO_EN)", 8)
         d += elm.ResistorIEC().down(1.6)
-        note(d, (-5.6, y_sw - 1.8), "RF2 330R 1W", 8)
+        note(d, (-5.6, y_sw - 1.8), "RF2 100R 1W", 8)
         d += elm.Fuse().down(1.6)
         note(d, (-5.6, y_sw - 3.4), "F4 50mA 250VDC 4kA", 8)
         d += elm.Dot(open=True).label("J3 BUS-", "left")
