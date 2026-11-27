@@ -10,8 +10,9 @@ inverter.
   <img src="docs/img/board_3d.png" width="80%" alt="The populated board, ray-traced render">
 </p>
 
-> **Status: untested design, v0.8.** No boards have been made. v0.6 and v0.7 fold in two design reviews; v0.8
-> lets the board measure or cope with the remaining unknowns itself. Several parts are placeholders (listed
+> **Status: untested design, v0.9.** No boards have been made. v0.6 and v0.7 fold in two design reviews; v0.8
+> lets the board measure or cope with the remaining unknowns itself; v0.9 is the same circuit re-routed with
+> [KiCadRoutingTools](https://github.com/drandyhaas/KiCadRoutingTools). Several parts are placeholders (listed
 > [below](#before-ordering)). The BOM carries LCSC numbers, Basic or Preferred wherever JLC has one. The design was
 > produced with an AI assistant from my brief and is up for review ([feedback](#feedback) welcome).
 > Don't connect it to a pack on the strength of this README.
@@ -187,9 +188,9 @@ with KiCad 7's Python (`pcbnew` importable).
 | Step | Command |
 |---|---|
 | netlist + placement | `python3 build_board.py unrouted.kicad_pcb` (also writes `parts.json`) |
-| route | `python3 route.py unrouted.kicad_pcb routed.kicad_pcb`, then `finish.py` and `postfix.py` |
-| later changes (ECOs on the routed board) | `eco_v04_terminations.py`, `eco_v04_route.py`, `eco_v04_j3_slots.py`, `eco_v04_usb.py`, `eco_v05_jlc.py` (MCP2518FD, JLC part swaps), `eco_v06_review.py` (applies `parts.json`: used for v0.6-v0.8), then `finish.py` for `WDT_OK`, `cleanup.py` (dangling copper) and `eco_v07_finish.py` (HV via nudge, wider coil copper) |
-| silkscreen | `python3 tidy_silk.py routed.kicad_pcb tidy.kicad_pcb` |
+| route | `KRT_DIR=<KiCadRoutingTools checkout> python3 krt_route.py unrouted.kicad_pcb routed.kicad_pcb` (~30 min; real track widths, JLC standard rules, keep-out on the HV band), then `cleanup.py routed.kicad_pcb` until it prints nothing, then `python3 eco_v07_finish.py routed.kicad_pcb finished.kicad_pcb` (coil copper to 1.0 mm where it fits) |
+| superseded (v0.1-v0.8 routing) | `route.py`, `finish.py`, `postfix.py`, `eco_v04_*.py`, `eco_v05_jlc.py`, `eco_v06_review.py`: the old in-house router and the ECOs applied on top of it; kept for history |
+| silkscreen | `python3 tidy_silk.py finished.kicad_pcb tidy.kicad_pcb` |
 | planes, DRC, JLC files | `python3 fab.py tidy.kicad_pcb ze2-mcm-spoof.kicad_pcb out/jlc` (LCSC picks from `jlc_parts.py`) |
 | layer images | `python3 photo_render.py ze2-mcm-spoof.kicad_pcb ../docs/img/layers` |
 | 3D render | `EXPORT_DIR=scene KICAD_3D_DIRS=<kicad 9 3dmodels>:<kicad 7 3dmodels> xvfb-run -a python3 render3d.py ze2-mcm-spoof.kicad_pcb ../docs/img/layers_top.png x`, then `python3 blender_render.py scene/scene.json ../docs/img/board 64 1800` (`pip install bpy`) |

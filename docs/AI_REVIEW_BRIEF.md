@@ -14,7 +14,7 @@ board sits between the MCM and the new pack and makes the MCM believe it still h
 - **Stage 2 (later):** 68S, about 260 V, MCM removed, ZombieVerter VCU + Toyota inverter. The board is then
   only a CAN gateway; its HV side is not used.
 
-Status: v0.8, designed, simulated, not built. Two AI reviews have been folded in already (v0.6 and v0.7 in the git log). The designer is not an electronics engineer. The design was
+Status: v0.9 (v0.8 circuit, re-routed with KiCadRoutingTools), designed, simulated, not built. Two AI reviews have been folded in already (v0.6 and v0.7 in the git log). The designer is not an electronics engineer. The design was
 produced with an AI assistant, so assume nothing has been checked by a human expert.
 
 ## The board

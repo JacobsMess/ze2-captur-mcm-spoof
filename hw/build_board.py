@@ -568,7 +568,7 @@ def build(path):
         t.SetTextThickness(pcbnew.FromMM(size * 0.15))
         board.Add(t)
     silk("HV <=150V DANGER", 104.0, 96.0, 1.5)
-    silk("ZE2 LiB MCM SPOOF v0.8", 96.0, 91.5, 1.0)
+    silk("ZE2 LiB MCM SPOOF v0.9", 96.0, 91.5, 1.0)
     silk("ANALOG ISLAND", 66.0, 2.0, 1.0)
     rect(90.5, 1.0, 119.0, 97.0, layer=pcbnew.F_SilkS, width=0.25)
 
