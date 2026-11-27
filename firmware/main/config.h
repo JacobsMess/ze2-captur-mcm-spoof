@@ -30,7 +30,7 @@
 #define PIN_CAN4_INT     14  // pin 22 MCP2518FD U20 (dash bus tap)
 #define PIN_HS_BMS       21  // pin 23 Captur BMS 12 V feed
 #define PIN_PUMP_PWM     47  // pin 24 coolant pump (U24 -> Q3)
-#define PIN_PUMP_SENSE   35  // pin 28 pump line / 3.55 (R102/R103): high above about 9 V
+#define PIN_PUMP_SENSE   35  // pin 28 Q26 drain (10k pull-up): LOW while the pump line is above ~6 V
 #define PIN_SPI_CS4      48  // pin 25
 #define PIN_CAN2_INT     38  // pin 31 MCP2518FD U6 (MCM side of the IMA bus)
 #define PIN_SPI_CS2      39  // pin 32
@@ -43,7 +43,7 @@
 typedef enum { BUS_EV = 0, BUS_MCM = 1, BUS_PCM = 2, BUS_DASH = 3, BUS_COUNT = 4 } bus_id_t;
 #define CAN_BITRATE        500000
 #define MCP_SPI_HZ         16000000   // MCP2518FD: <= 0.85 x SYSCLK/2 = 17 MHz; 80 MHz / 5 on the S3
-#define HV_DIV_X1000       86532      // (1k + 400k + 4.7k + 1k) / 4.7k incl. RF3/RF4; calibrate per board
+#define HV_DIV_X1000       90362      // (10k + 400k + 4.7k + 10k) / 4.7k incl. RF3/RF4; calibrate per board
 #define MCP_OSC_HZ         40000000   // SYSCLK = crystal, PLL off
 
 // ---------------------------------------------------------------- analog island (I2C)
@@ -70,8 +70,17 @@ typedef enum { BUS_EV = 0, BUS_MCM = 1, BUS_PCM = 2, BUS_DASH = 3, BUS_COUNT = 4
 #define PRECHARGE_TIMEOUT_MS 3000
 #define DEAD_BUS_MV        20000      // below this the link counts as dead (weld check)
 #define MAIN_PICKUP_MS     100        // precharge held this long after main+ is commanded
-#define CLOSE_VERIFY_MS    100        // then link must be >= CLOSED_MIN_PCT of pack
+#define CLOSE_VERIFY_MS    300        // then precharge off for this long: the link must hold up (below)
+#define CLOSE_AVG_MS       50         // link averaged over the first and the last this-long of that window
 #define CLOSED_MIN_PCT     92         // allows for the untrimmed 1 % bus-sense divider
+// An open main+ with the link capacitance charged through precharge still reads ~100 %, so voltage alone can't
+// prove closure. With precharge off it decays through the link's bleed: an open main+ shows as droop across
+// the verify window, a closed one holds flat. Catches an open main+ if the link bleed time constant is under
+// ~20 x CLOSE_VERIFY_MS / (CLOSE_DROOP_PM / 1000) = 4 s at these values; measure it (docs/BRINGUP.md) and
+// tune before relying on it. 0 disables the check.
+#define CLOSE_DROOP_PM     15         // per mille of pack voltage
+#define LINK_MAX_PCT       108        // link above pack x this % + LINK_MAX_EXTRA_MV: sensor or BMS data wrong
+#define LINK_MAX_EXTRA_MV  4000
 #define BUS_COLLAPSE_PCT   70         // closed, link below this % of pack: fault
 #define PACK_TOL_PCT       3          // BMS cell sum vs 68 x cell range: 3 % + 2 V
 #define PACK_TOL_MV        2000
@@ -82,6 +91,7 @@ typedef enum { BUS_EV = 0, BUS_MCM = 1, BUS_PCM = 2, BUS_DASH = 3, BUS_COUNT = 4
 #define IGN_ON_MS          100
 #define IGN_OFF_MV         6000       // key-off below this for IGN_OFF_MS (rides through a crank dip)
 #define IGN_OFF_MS         2000
+#define IGN_INVALID_MS     500        // no valid ignition reading for this long: latched fault, contactors open
 
 // ---------------------------------------------------------------- coolant pump (pump.h)
 #define PUMP_PWM_HZ        20000      // 2-wire brushed pump chopped above audio
@@ -94,6 +104,8 @@ typedef enum { BUS_EV = 0, BUS_MCM = 1, BUS_PCM = 2, BUS_DASH = 3, BUS_COUNT = 4
 #define WDI_PERIOD_MS      100        // TPS3431 kick: one rising edge per period (timeout 1.36 s min)
 #define WDT_STALL_MS       600        // loop gap this long with coils energised: latched fault
 #define BUS_SILENT_MS      500        // IMA half quiet this long -> drop back to bypass
+#define GW_ARM_MS          100        // both CAN controllers must confirm normal mode within this, or no split
+#define ISLAND_FAIL_MS     250        // no good DAC write + ADC readback for this long: taps float
 #define BMS_TIMEOUT_MS     1000       // any Captur value older than this -> hard trip (normally < 150 ms)
 
 // ---------------------------------------------------------------- CAN IDs

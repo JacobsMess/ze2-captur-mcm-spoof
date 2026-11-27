@@ -13,6 +13,7 @@ bool mcp_init(int chip, bool listen_only);
 bool mcp_set_listen_only(int chip, bool listen_only);   // CAN task only (touches SPI)
 // any task: ask the CAN task to change mode on its next pass
 void mcp_request_listen_only(int chip, bool listen_only);
+int mcp_mode(int chip);   // last mode confirmed by OPMOD: 0 normal, 1 listen-only, -1 pending or failed
 void mcp_apply_pending(int chip);                          // CAN task
 // service one chip once: drain up to a batch of frames from its receive FIFO and clear overflow flags.
 // Calls cb for every received frame. Returns number of frames received.

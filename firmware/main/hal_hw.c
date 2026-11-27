@@ -151,7 +151,7 @@ void hal_pump_config(uint32_t hz)
     if (ledc_timer_config(&lt) != ESP_OK) ESP_LOGE(TAG, "pump PWM %lu Hz not possible", (unsigned long)hz);
 }
 
-bool hal_pump_line_high(void) { return gpio_get_level(PIN_PUMP_SENSE); }
+bool hal_pump_line_high(void) { return !gpio_get_level(PIN_PUMP_SENSE); }   // Q26 inverts
 
 void hal_pump_pwm(float duty)
 {
@@ -173,14 +173,14 @@ bool hal_dac_write4(const uint16_t code[4])
 
 bool hal_adc_island(int dev, int ch, int32_t *mv)
 {
-    // single-shot, single-ended AINch, +/-4.096 V, 860 SPS
-    uint16_t cfg = 0x8000 | (0x4 + ch) << 12 | 0x1 << 9 | 0x1 << 8 | 0x7 << 5 | 0x3;
+    // single-shot, single-ended AINch, +/-6.144 V (inputs reach the 5 V island rail), 860 SPS
+    uint16_t cfg = 0x8000 | (0x4 + ch) << 12 | 0x0 << 9 | 0x1 << 8 | 0x7 << 5 | 0x3;
     uint8_t w[3] = {0x01, cfg >> 8, cfg & 0xFF};
     if (i2c_master_transmit(s_adc[dev], w, 3, 5) != ESP_OK) return false;
     vTaskDelay(pdMS_TO_TICKS(2));
     uint8_t reg = 0x00, r[2];
     if (i2c_master_transmit_receive(s_adc[dev], &reg, 1, r, 2, 5) != ESP_OK) return false;
-    *mv = (int16_t)(r[0] << 8 | r[1]) * 4096 / 32768;
+    *mv = (int16_t)(r[0] << 8 | r[1]) * 6144 / 32768;
     return true;
 }
 
@@ -198,7 +198,7 @@ bool hal_bus_mv(int32_t *mv)
     // large negative differential (fail-safe), which must not read as a dead bus.
     int cm = (p + n) / 2, diff = p - n;
     if (cm < AMC_CM_MIN_MV || cm > AMC_CM_MAX_MV || diff < AMC_DIFF_MIN_MV) return false;
-    // divider RF3 + RS1-RS4 + RS5 + RF4 over RS5: x86.5, 173 V full scale. Trim HV_DIV_X1000 against a meter.
+    // divider RF3 + RS1-RS4 + RS5 + RF4 over RS5: x90.4, 181 V full scale. Trim HV_DIV_X1000 against a meter.
     *mv = diff < 0 ? 0 : (int32_t)((int64_t)diff * HV_DIV_X1000 / 1000);
     return true;
 }

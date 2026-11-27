@@ -94,8 +94,9 @@ def test_usb_c_overhangs_bottom_edge(board):
 
 
 def test_full_bus_clearance_rule_is_enforced():
-    # the 0.7 mm BUS_P-to-bus-negative figure lives in the DRC rules, so fab.py's DRC holds the layout to it
+    # every HV-class net (bus, ladder, taps, sense chain, fuse and zero-ohm-link sides) keeps 0.7 mm from the
+    # bus-negative side; the rule lives in the DRC rules, so fab.py's DRC holds the layout to it
     dru = (ROOT / "hw" / "ze2-mcm-spoof.kicad_dru").read_text()
-    assert "BUS_P*" in dru and "HVLOW" in dru and "(min 0.7mm)" in dru
+    assert "A.NetClass == 'HV' && B.NetClass == 'HVLOW'" in dru and "(min 0.7mm)" in dru
     report = (ROOT / "hw" / "out" / "drc_report.txt").read_text()
     assert "[clearance]" not in report and "[unconnected_items]" not in report

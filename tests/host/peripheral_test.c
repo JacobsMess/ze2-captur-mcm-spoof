@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "captur.h"
+#include "config.h"
 #include "gateway.h"
 #include "hal.h"
 #include "pump.h"
@@ -32,7 +33,14 @@ bool hal_pump_line_high(void)
 // ------------------------------------------------------------------ NTC lines
 static float rth = 6800, vth = 5.0f, dac_gain = 1.0f;
 static uint16_t dac[4];
-bool hal_dac_write4(const uint16_t c[4]) { memcpy(dac, c, sizeof dac); return true; }
+static bool island_down, island_reported;
+bool hal_dac_write4(const uint16_t c[4])
+{
+    if (island_down) return false;
+    memcpy(dac, c, sizeof dac);
+    return true;
+}
+void safety_island_report(bool ok) { island_reported = ok; }
 static float node_v(int ch)
 {
     float vo = dac[ch] / 4095.0f * 5.0f * dac_gain;
@@ -40,7 +48,7 @@ static float node_v(int ch)
 }
 bool hal_adc_island(int dev, int ch, int32_t *mv)
 {
-    if (dev != 0 || ch > 2) return false;
+    if (dev != 0 || ch > 2 || island_down) return false;
     *mv = (int32_t)lroundf(node_v(ch) * 1000);
     return true;
 }
@@ -128,11 +136,24 @@ static void pump_pwm_mode(void)
     CHECK(fabsf(duty - 0.3f) < 1e-6f, "minimum duty so a brushed pump starts");
 }
 
+static void island_loss_reported(void)
+{
+    run_spoof(500);
+    CHECK(island_reported && g_spoof.island_ok, "healthy island reported");
+    island_down = true;       // DAC/ADC stop answering (I2C or isolator failure)
+    run_spoof(ISLAND_FAIL_MS + 60);
+    CHECK(!island_reported, "island loss reported within ISLAND_FAIL_MS + one write period");
+    island_down = false;
+    run_spoof(200);
+    CHECK(island_reported, "recovers when the island answers again");
+}
+
 static const struct { const char *name; void (*fn)(void); } SCEN[] = {
     {"ntc_measures_mcm_input", ntc_measures_mcm_input}, {"ntc_trim_absorbs_dac_error", ntc_trim_absorbs_dac_error},
     {"ntc_no_pullup_falls_back", ntc_no_pullup_falls_back}, {"pump_onoff_default", pump_onoff_default},
     {"pump_open_circuit", pump_open_circuit}, {"pump_q3_failed", pump_q3_failed},
     {"pump_signal_mode", pump_signal_mode}, {"pump_pwm_mode", pump_pwm_mode},
+    {"island_loss_reported", island_loss_reported},
 };
 
 int main(int argc, char **argv)

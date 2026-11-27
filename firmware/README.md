@@ -14,11 +14,16 @@ they're decoded from logs.
 | 0 | Wi-Fi, HTTP | Access point `ZE2-SPOOF` (or station mode from NVS), status at `/`, firmware update at `POST /update` |
 
 - **Gateway:** starts in bypass (K4 relaxed, both IMA controllers listen-only). It splits the bus only when
-  enabled in NVS (`ze2/mitm`, off by default). It falls back to bypass, latched until key-off, if either
-  half goes quiet for 500 ms. Rewrite hooks per CAN ID; with none registered, frames pass through
+  enabled in NVS (`ze2/mitm`, off by default), and then only after both controllers confirm normal mode by
+  reading OPMOD back (within 100 ms, else bypass). It falls back to bypass, latched until key-off, if either
+  half goes quiet for 500 ms or a controller leaves normal mode. The control task is on the ESP-IDF task
+  watchdog (2 s, panic): a hung loop resets the chip, the GPIOs float and K4 drops to bypass. Rewrite hooks per CAN ID; with none registered, frames pass through
   unchanged.
 - **Ignition:** the board supply (after D7) on the ADC: on above 9 V for 100 ms, off below 6 V for 2 s, so
   a crank dip is not a key-off. Key-off is the only thing that clears a latched trip or contactor fault.
+  No valid reading for 500 ms is a latched fault (contactors open) that the sense recovering doesn't clear.
+- **Reset while running:** a brownout, watchdog or panic reset (`esp_reset_reason`) starts the board tripped,
+  until a real key-off is seen (in practice the next power cycle), since the RAM latch didn't survive.
 - **Captur BMS (`captur.c`):** 0x0F5 keep-alive every 20 ms (`7D`, counter, CRC-8 poly 0x1D init 0xC4, `FF D7
   F8 00 D0`) and one UDS read every 20 ms on 0x18DADBF1 / 0x18DAF1DB, round-robin over 9007/9009 (max/min
   cell), 9006 (cell sum), 9013/9014 (min/max temperature), 9001 (SOC) and 9005 (pack voltage, logged only).
@@ -26,9 +31,17 @@ they're decoded from logs.
 - **Contactors (`contactors.c`):** main+ and precharge (pack negative is hard-wired; the board's third high
   side is a spare that stays off). The link must be dead with both coils off (rules out a weld), then
   precharge to 90 % of the series string (cell sum x 34/68 in stage 1), main+ with precharge held 100 ms,
-  then the link must reach 95 %.
-  Any fault (weld, bus sense invalid, precharge timeout, main+ not closed, link collapse, a control-loop
-  stall) is latched and is a hard trip, so the taps float too. Stage 2 never runs the sequencer.
+  then precharge off for 300 ms: the link must reach 92 % and its mean over the last 50 ms may not be more
+  than 1.5 % (`CLOSE_DROOP_PM`) below its mean over the first 50 ms. A link charged through precharge reads
+  ~100 % with main+ open too; it is the decay through the link's bleed that gives an open main+ away. That
+  works while the bleed time constant is under ~4 s: measure it ([BRINGUP](../docs/BRINGUP.md)) and tune.
+  In PRECHARGE and CLOSING the deadline is checked first, losing start permission (a soft trip) aborts, and so
+  does a link above 108 % of pack + 4 V (sensor or BMS data wrong).
+  Any fault (weld, bus sense invalid, precharge timeout, main+ not closed or decaying, link implausible,
+  permission lost mid-close, link collapse, a control-loop stall) is latched and is a hard trip.
+  Stage 2 never runs the sequencer.
+- **Taps:** OPTO_EN only in CT_CLOSED (verified) with the analog island healthy (a good DAC write and ADC
+  readback within 250 ms) and nothing at soft trip or above.
 - **Watchdog latch:** every kick clocks MCU_EN into U10. A gap over 600 ms between loop passes with coils
   energised is a latched fault, caught before the next kick can clock MCU_EN back in.
 - **Bus sense:** a reading counts only if both ADC reads and calibration work, the AMC3311 output common

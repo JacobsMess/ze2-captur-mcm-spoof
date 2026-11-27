@@ -139,16 +139,19 @@ def sheet2(path):
         wire(d, g.Q, buf.A, "-|")
         d += elm.Line().at(g.D).left(1.4).label("MCU_EN", "left")
         d += elm.Line().at(g.CLK).left(1.4).label("WDI (MCU kick)", "left")
-        wd = ic(d, (g.CLR[0] - 5.6, g.CLR[1] - 2.8), 2.4, 1.6, "U11 TPS3431\nwatchdog", left=("WDI",), right=("WDO",), lab_loc="bottom")
-        wire(d, wd.WDO, g.CLR, "-|")
+        st = ic(d, (g.CLR[0] - 3.0, g.CLR[1] + 0.5), 1.4, 1.0, "U25 LVC1G17", left=("A",), right=("Y",), lab_loc="bottom")
+        wire(d, st.Y, g.CLR, "-|")
+        wd = ic(d, (st.A[0] - 4.2, st.A[1] - 2.3), 2.4, 1.6, "U11 TPS3431\nwatchdog", left=("WDI",), right=("WDO",), lab_loc="bottom")
+        wire(d, wd.WDO, st.A, "-|")
         d += elm.Line().at(wd.WDI).left(1.2).label("WDI", "left")
 
         note(d, (0, -14.5),
              "Every coil needs BOTH its high-side command AND the low-side master enable (MASTER_EN = latched MCU_EN).\n"
-             "WDI edges clock MCU_EN into U10; a WDT timeout clears it. A stall seen on resume is a latched fault (key-off clears). C27 = power-on clear.\n"
+             "WDI rising edges clock MCU_EN into U10; U11 counts falling edges and a timeout clears U10. A stall seen on resume is a latched fault.\n"
+             "R19/C27 = power-on clear; U25 (Schmitt) squares its 10 ms edge for U10's CLR.\n"
              "U23/U24 SN74LV1T34 on +5 V: the NCE6020AK gates get 5 V (RDS(on) is specified from 4.5 V).\n"
              "VND7050AJ: current limit, thermal shutdown, ~-40V internal clamp = fast-decay coil, fast contact opening.\n"
-             "MultiSense to 1k (unused), SEn/SEL to GND: contactor state is verified by the isolated bus-voltage sense (sheet 3). No plain flyback diodes on coils.")
+             "MultiSense to 1k (unused), SEn/SEL to GND: closure is verified by the isolated bus sense (sheet 3): level and no droop with precharge off. No flyback diodes.")
 
         d += elm.Dot(open=True).at((0, -18.5)).label("VCOIL", "left")
         d += elm.Line().right(2)
@@ -160,12 +163,19 @@ def sheet2(path):
         d += (p3 := elm.Dot())
         d += elm.Line().right(1.6).label("J2 PUMP- / signal", "right")
         d += elm.Resistor().at(p3.center).down(1.8)
-        note(d, (p3.center[0] + 0.5, p3.center[1] - 0.6), "R102 56k", 8)
+        note(d, (p3.center[0] + 0.5, p3.center[1] - 0.6), "R102 200k", 8)
         d += (ps := elm.Dot())
         d += elm.Resistor().down(1.6)
-        note(d, (ps.center[0] + 0.5, ps.center[1] - 0.7), "R103 22k", 8)
+        note(d, (ps.center[0] + 0.5, ps.center[1] - 0.7), "R103 100k", 8)
         d += elm.Ground()
-        d += elm.Line().at(ps.center).right(2.6).label("GPIO35 PUMP_SENSE", "right", fontsize=8)
+        qs = ic(d, (ps.center[0] + 3.4, ps.center[1] - 0.5), 2.2, 1.0, "Q26 2N7002 (S to GND)",
+                left=("G",), right=("D",), lab_loc="bottom")
+        wire(d, ps.center, qs.G, "-")
+        d += elm.Line().at(qs.D).right(1.0)
+        d += (sd := elm.Dot())
+        d += elm.Line().right(1.2).label("GPIO35 PUMP_SENSE (low = line above ~6 V)", "right", fontsize=8)
+        d += elm.Resistor().at(sd.center).up(1.4)
+        d += elm.Line().up(0.2).label("3V3 (R104 10k)", "right", fontsize=8)
         d += (qp := elm.NFet(bulk=False).at(p2.center).anchor("drain").down().reverse())
         d += elm.Ground().at(qp.source)
         d += elm.Line().at(qp.gate).left(1.0).label("PUMP_PWM via U24 (5 V)", "left")
@@ -181,9 +191,11 @@ def sheet3(path):
     with schemdraw.Drawing(show=False, fontsize=10) as d:
         d.config(unit=1.6)
         note(d, (-6, 3.0), "Sheet 3 - HV tap divider and isolated bus sense   (HV DOMAIN, interim MCM build only, <=150 V: 5.6 mm isolation band, short slots under the isolators)", 15)
-        d += elm.Dot(open=True).at((0, 0)).label("J3 BUS+", "left")
+        d += elm.Dot(open=True).at((0, 1.6)).label("J3 BUS+", "left")
+        d += elm.Fuse().down(1.6)
+        note(d, (-5.6, 1.2), "F3 50mA 250VDC 4kA (0242.050UR)", 8)
         d += elm.ResistorIEC().down(1.6)
-        note(d, (-5.6, -0.4), "RF1 1k 1W fusible", 8)
+        note(d, (-5.6, -0.4), "RF1 330R 1W", 8)
         d += elm.Switch().down(1.6)
         note(d, (-5.6, -2.0), "K2 AQV214EH 400V (OPTO_EN)", 8)
         d += elm.Line().down(0.4)
@@ -204,13 +216,15 @@ def sheet3(path):
         d += elm.Switch().down(1.6)
         note(d, (-5.6, y_sw - 0.2), "K3 AQV214EH 400V (OPTO_EN)", 8)
         d += elm.ResistorIEC().down(1.6)
-        note(d, (-5.6, y_sw - 1.8), "RF2 1k 1W fusible", 8)
+        note(d, (-5.6, y_sw - 1.8), "RF2 330R 1W", 8)
+        d += elm.Fuse().down(1.6)
+        note(d, (-5.6, y_sw - 3.4), "F4 50mA 250VDC 4kA", 8)
         d += elm.Dot(open=True).label("J3 BUS-", "left")
         note(d, (-5.6, -6.0), "Each segment = 2x 10k\n1206 0.1% in series\n(single short only\nhalves one segment)\n\n0R in each tap output\n(option: series R)\n\nRtrim footprint between\nBUS+ and VHB8: 0R default,\nfit to scale taps if needed", 8)
 
         d += elm.Dot(open=True).at((12, 0)).label("BUS+", "left")
         d += elm.Resistor().down(2.0)
-        note(d, (12.4, -0.4), "4x 100k", 8)
+        note(d, (12.4, -0.4), "RF3 10k 1W + 4x 100k\n(RF4 10k 1W at BUS-)", 8)
         d += (m := elm.Dot())
         d += elm.Resistor().down(2.0)
         note(d, (12.4, -2.6), "4.7k", 8)
@@ -224,12 +238,14 @@ def sheet3(path):
         d += elm.Line().at(amc.VDD2).up(1.4)
         note(d, (amc.VDD2[0] + 0.2, amc.VDD2[1] + 2.4), "+5V (LV side)\nC39 1n at pin, C48 1u", 8)
         note(d, (12, -8.5),
-             "Bus 0-172V -> 0-2.0V (1% parts, ratio trimmed in firmware). Uses: precharge complete (>=95% of BMS sum),\n"
-             "weld check (<20V 500ms after open), BMS sum cross-check (5%).\n\n"
+             "Bus 0-181V -> 0-2.0V (1% parts, ratio trimmed in firmware). Uses: weld check (dead link before a close),\n"
+             "precharge (>=90% of BMS sum), closure (>=92% and no droop with precharge off), upper plausibility bound.\n"
+             "Faults: a short below RF1/RF2 opens F3/F4 in ms (>=220 mA even tap-to-tap); RF3/RF4 hold any divider short within 1 W.\n\n"
              "8 segments fitted (9 taps). 7-segment car: link VHB8 to VHB7, J4 pin 9 unused.\n"
              "Opto LEDs from 3V3 via 330R, switched by OPTO_EN: MCU dead = divider floats\n"
              "= MCM sees no pack = safe IMA-off state.\n"
-             "Divider load ~0.17 mA at 130V; zero drain with IG off.\nHV netclass 0.6 mm (IPC-2221 B2, uncoated, 101-150V). Not fitted in the ZombieVerter build.")
+             "Divider load ~0.17 mA at 130V; zero drain with IG off.\nHV netclass 0.6 mm (IPC-2221 B2, uncoated, 101-150V); every HV net to the bus-negative side 0.7 mm.\n"
+             "K2/K3 on Panasonic's 8.3 mm land pattern; pin 5 (MOSFET midpoint) soldered, no connection. Not fitted in the ZombieVerter build.")
         d.save(path, dpi=DPI, transparent=False)
 
 

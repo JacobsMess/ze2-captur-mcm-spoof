@@ -17,10 +17,13 @@ SCENARIOS = {
     "control_test": ["normal_close", "only_cells", "stale_groups_stage2", "live_link_while_open",
                      "soft_trip_before_start", "soft_trip_while_closed", "pack_disagrees_with_cells", "welded_pos",
                      "welded_pre", "sense_invalid", "sense_lost_while_closed", "stall_and_resume",
-                     "crank_dip_keeps_trip", "decoder_checks", "keepalive_frames"],
+                     "crank_dip_keeps_trip", "decoder_checks", "keepalive_frames", "main_stuck_open",
+                     "main_stuck_open_full_link",
+                     "soft_trip_during_precharge", "link_reads_high", "late_precharge", "ignition_sense_lost",
+                     "reset_latch", "taps_need_island", "clock_wrap"],
     "peripheral_test": ["ntc_measures_mcm_input", "ntc_trim_absorbs_dac_error", "ntc_no_pullup_falls_back",
                         "pump_onoff_default", "pump_open_circuit", "pump_q3_failed", "pump_signal_mode",
-                        "pump_pwm_mode"],
+                        "pump_pwm_mode", "island_loss_reported"],
 }
 
 

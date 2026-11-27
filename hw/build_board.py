@@ -236,7 +236,7 @@ part("U10", ("Package_SO", "VSSOP-8_2.3x2mm_P0.5mm"), "74LVC1G74", "SN74LVC1G74D
       "8": "+3V3"}, (38.0, 58.0), 0)
 c("C26", "100n", "+3V3", "GND", (38.0, 54.5), 0)
 r("R18", "100k", "MCU_EN", "GND", (34.0, 54.5), 0)
-part("U11", ("Package_SON", "VSON-8-1EP_3x3mm_P0.65mm_EP1.65x2.4mm"), "TPS3431-Q1", "TPS3431SDRBRQ1",
+part("U11", ("Package_SON", "VSON-8-1EP_3x3mm_P0.65mm_EP1.65x2.4mm"), "TPS3431-Q1", "TPS3431SQDRBRQ1",
      {"1": "+3V3", "2": "NC_CWD", "3": "+3V3", "4": "GND", "5": "+3V3", "6": "WDI", "7": "WDT_OK", "8": "NC_ENOUT",
       "9": "GND"}, (44.0, 58.0), 0)
 r("R19", "100k", "+3V3", "WDT_OK", (44.0, 54.0), 0)   # WDO pull-up; with C27 also the latch's power-on clear
@@ -488,6 +488,51 @@ for ref, (pos, rot) in MOVES.items():
 MOVES.update({"RF1": ((93.5, 8.5), 90)})
 PARTS["RF1"]["pos"], PARTS["RF1"]["rot"] = MOVES["RF1"]
 
+# v0.10 (v0.9 review) ------------------------------------------------------------------------------------------
+# Pump readback through a threshold FET: the GPIO never sees the 12-16 V line (the old 56k/22k divider put
+# 4.06 V on it at 14.4 V). Gate divider 200k/100k: on above 7.5 V even at the 2N7002's 2.5 V max VGS(th)
+# (~5 V typical), 16 V gives 5.3 V and a 40 V load dump 13 V of gate (20 V max). Unpowered board: the line only
+# reaches the gate.
+part("R102", R0805, "200k", "200k 0805 1%", {"1": "PUMP_N", "2": "PUMP_G"}, (57.5, 40.3), 0)
+part("R103", R0805, "100k", "100k 0805 1%", {"1": "PUMP_G", "2": "GND"}, (57.5, 42.7), 0)
+part("Q26", ("Package_TO_SOT_SMD", "SOT-23"), "2N7002", "2N7002",
+     {"1": "PUMP_G", "2": "GND", "3": "PUMP_SENSE"}, (61.3, 41.6), 0)
+r("R104", "10k", "+3V3", "PUMP_SENSE", (57.5, 45.2), 0)
+# U10's CLR gets a Schmitt-buffered copy of WDT_OK: R19/C27 (10 ms power-on clear) is far slower than the
+# LVC1G74's 10 ns/V input limit
+part("U25", ("Package_TO_SOT_SMD", "SOT-353_SC-70-5"), "74LVC1G17", "SN74LVC1G17DCKR",
+     {"1": "NC_U25_1", "2": "WDT_OK", "3": "GND", "4": "WDT_CLR", "5": "+3V3"}, (37.5, 60.8), 0)
+c("C51", "100n", "+3V3", "GND", (34.0, 60.8), 0)
+PARTS["U10"]["nets"]["6"] = "WDT_CLR"
+PARTS["U11"]["nets"]["3"] = "NC_U11_EN"   # EN has an internal pull-up to VDD (TI: may float)
+PARTS["C20"]["pos"], PARTS["C20"]["rot"] = (31.6, 37.5), 0   # U7's VCC decoupler, next to its pin 3
+# K2/K3 on Panasonic's own land pattern, all six lands; pin 5 (output MOSFET midpoint, unused in connection A)
+# gets a net of its own in the HV class so it keeps HV spacing like the leads around it
+for ref, rled in (("K2", "R52"), ("K3", "R53")):
+    PARTS[ref]["fp"] = ("ze2", "Panasonic_PhotoMOS_DIP6_SMD_W8.3mm")
+    x, y = PARTS[rled]["pos"]
+    PARTS[rled]["pos"] = (x - 0.4, y)   # clear of the wider land pattern
+    PARTS[ref]["nets"]["5"] = f"{ref}_P5"
+# Fault protection on the HV feeds. Tap ladder: a short downstream of RF1/RF2 (harness, opto, ladder) now opens a
+# 250 V DC-rated 50 mA fuse in milliseconds; RF1/RF2 drop to 330R so even a tap-to-tap harness short draws
+# >4x the fuse rating (150 V / 680R = 220 mA). Bus sense: RF3/RF4 up to 10k, so a short anywhere in the
+# 425k divider leaves each at <= 0.56 W of its 1 W: no fuse needed there.
+part("F3", ("ze2", "Fuse_Littelfuse_242_SMD_L8.4mm_D3.0mm"), "50mA 250V", "Littelfuse 0242.050UR",
+     {"1": "BUS_P", "2": "BUS_P_FS"}, (104.0, 13.80), 0)
+part("F4", ("ze2", "Fuse_Littelfuse_242_SMD_L8.4mm_D3.0mm"), "50mA 250V", "Littelfuse 0242.050UR",
+     {"1": "BUS_N_FS", "2": "BUS_N"}, (101.0, 80.5), 0)
+for ref, nets in (("RF1", {"1": "BUS_P_FS", "2": "DIV_TOP_IN"}), ("RF2", {"1": "DIV_BOT_IN", "2": "BUS_N_FS"})):
+    PARTS[ref].update(val="330 1W", mpn="25121WJ0331T4E 330R 1W 2512", nets=nets)
+for ref in ("RF3", "RF4"):
+    PARTS[ref].update(val="10k 1W", mpn="25121WF1002T4E 10k 1W 2512 1%")
+# DAC_D (U14 pin 9, top right) to its summing resistor above U14 rather than across the DAC_A-C fan-out
+PARTS["R40"]["pos"], PARTS["R40"]["rot"] = (60.0, 11.45), 0
+# fewer feeders: C41 onto the 1 nF 0603 already used, every 100 nF on the one 0603 50 V X7R
+PARTS["C41"].update(fp=("Capacitor_SMD", "C_0603_1608Metric"), mpn="1n 0603 X7R")
+for p_ in PARTS.values():
+    if p_["val"] == "100n" and p_["fp"] == C0805:
+        p_.update(fp=("Capacitor_SMD", "C_0603_1608Metric"), mpn="100n 0603 X7R")
+
 # ================================================================== build
 def mm(x, y):
     return pcbnew.VECTOR2I(pcbnew.FromMM(OX + x), pcbnew.FromMM(OY + y))
@@ -532,10 +577,6 @@ def build(path):
         fp.Reference().SetTextThickness(pcbnew.FromMM(0.12))
         fp.Value().SetVisible(False)
         fp.SetLocalClearance(0)
-        if ref in ("K2", "K3"):  # AQV216 pin 5 is not connected: drop the pad to keep HV spacing on the output side
-            for pad in list(fp.Pads()):
-                if pad.GetNumber() == "5":
-                    fp.Remove(pad)
         for pad in fp.Pads():
             pad.SetLocalClearance(0)
 
@@ -568,7 +609,7 @@ def build(path):
         t.SetTextThickness(pcbnew.FromMM(size * 0.15))
         board.Add(t)
     silk("HV <=150V DANGER", 104.0, 96.0, 1.5)
-    silk("ZE2 LiB MCM SPOOF v0.9", 96.0, 91.5, 1.0)
+    silk("ZE2 LiB MCM SPOOF v0.10", 96.0, 91.5, 1.0)
     silk("ANALOG ISLAND", 66.0, 2.0, 1.0)
     rect(90.5, 1.0, 119.0, 97.0, layer=pcbnew.F_SilkS, width=0.25)
 

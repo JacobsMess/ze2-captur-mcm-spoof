@@ -78,6 +78,7 @@ typedef struct {
     mcp_stats_t st;
     bool listen_only;
     volatile int8_t pending_mode;   // -1 none, 0 normal, 1 listen-only
+    volatile int8_t mode;           // confirmed by OPMOD: 0 normal, 1 listen-only; -1 pending or failed
 } mcp_t;
 
 static mcp_t s_mcp[MCP_COUNT];
@@ -169,12 +170,18 @@ bool mcp_init(int chip, bool listen_only)
     m->tx_free = TX_DEPTH;
     m->listen_only = listen_only;
     m->pending_mode = -1;
-    bool ok = set_mode(chip, listen_only ? MODE_LISTEN : MODE_CAN20);
+    bool ok = mcp_set_listen_only(chip, listen_only);
     if (!ok) ESP_LOGE(TAG, "chip %d did not enter %s mode", chip, listen_only ? "listen-only" : "normal");
     return ok;
 }
 
-void mcp_request_listen_only(int chip, bool listen_only) { s_mcp[chip].pending_mode = listen_only ? 1 : 0; }
+void mcp_request_listen_only(int chip, bool listen_only)
+{
+    s_mcp[chip].mode = -1;   // unconfirmed until the CAN task has applied it and read OPMOD back
+    s_mcp[chip].pending_mode = listen_only ? 1 : 0;
+}
+
+int mcp_mode(int chip) { return s_mcp[chip].mode; }
 
 void mcp_apply_pending(int chip)
 {
@@ -188,7 +195,9 @@ void mcp_apply_pending(int chip)
 bool mcp_set_listen_only(int chip, bool listen_only)
 {
     s_mcp[chip].listen_only = listen_only;
-    return set_mode(chip, listen_only ? MODE_LISTEN : MODE_CAN20);
+    bool ok = set_mode(chip, listen_only ? MODE_LISTEN : MODE_CAN20);
+    s_mcp[chip].mode = ok ? listen_only : -1;
+    return ok;
 }
 
 static void decode(const uint8_t *b, can_frame_t *f)

@@ -10,9 +10,10 @@ inverter.
   <img src="docs/img/board_3d.png" width="80%" alt="The populated board, ray-traced render">
 </p>
 
-> **Status: untested design, v0.9.** No boards have been made. v0.6 and v0.7 fold in two design reviews; v0.8
-> lets the board measure or cope with the remaining unknowns itself; v0.9 is the same circuit re-routed with
-> [KiCadRoutingTools](https://github.com/drandyhaas/KiCadRoutingTools). Several parts are placeholders (listed
+> **Status: untested design, v0.10.** No boards have been made. v0.6, v0.7 and v0.10 fold in three design reviews;
+> v0.8 lets the board measure or cope with the remaining unknowns itself; v0.9 moved the routing to
+> [KiCadRoutingTools](https://github.com/drandyhaas/KiCadRoutingTools). Bring-up and vehicle checks are in
+> [docs/BRINGUP.md](docs/BRINGUP.md). Several parts are placeholders (listed
 > [below](#before-ordering)). The BOM carries LCSC numbers, Basic or Preferred wherever JLC has one. The design was
 > produced with an AI assistant from my brief and is up for review ([feedback](#feedback) welcome).
 > Don't connect it to a pack on the strength of this README.
@@ -34,9 +35,10 @@ inverter.
 
 <p align="center"><img src="docs/img/architecture.png" width="100%" alt="Stage 1 architecture"></p>
 
-- **Cell taps:** a resistor divider fed from the real pack bus (fused, switched by two optoMOS)
-  gives the MCM nine balanced taps. If the board loses power the optoMOS open, the taps float and
-  the MCM sets the IMA light and stops using the pack.
+- **Cell taps:** a resistor divider fed from the real pack bus (through a 250 V DC fuse and 330 ohm at
+  each end, switched by two optoMOS) gives the MCM nine balanced taps. The taps are switched on only once
+  the contactors are verified closed and the analog island is answering. If the board loses power the
+  optoMOS open, the taps float and the MCM sets the IMA light and stops using the pack.
 - **Temperatures:** a DAC and op-amp buffers drive the three NTC lines, mapping the Captur
   temperatures onto the Honda curve.
 - **SOC:** a small DAC offset added to the Hall sensor signal nudges the MCM's own coulomb count to
@@ -52,16 +54,23 @@ inverter.
   through a photoMOS driven alongside the coil. Each has a solder jumper, open by default; measure
   CANH-CANL on each half with the bus split (about 120 ohm: close it; about 60 ohm: leave it).
   CAN4 is a plain tap on the dash bus. CAN2-4 transceivers stay in hardware silent mode until a
-  solder jumper is closed.
+  solder jumper is closed. Bypass is the factory setting (`mitm` off in NVS); when splitting is enabled,
+  K4 is energised only after both CAN controllers confirm normal mode, and a hung control loop is reset by
+  the task watchdog, which releases K4.
 - **Protection:** steer SOC first; then float the tap divider so the MCM faults; last, open the
   Captur contactors. The master enable is a flip-flop that the firmware's watchdog kicks clock
   in; if the firmware hangs the watchdog clears it. A stall is a latched fault: nothing closes again
   until a key-off, which the ADC reads with hysteresis and a 2 s dwell so a crank dip doesn't count.
-  Contactor, sensing and weld faults all end the same way. No regen below about 5 C.
+  Contactor, sensing and weld faults all end the same way, as does losing the ignition reading for
+  0.5 s. A reset while running (brownout, watchdog, panic) starts tripped and stays so until the next
+  power cycle. No regen below about 5 C.
 - **Closing the contactors:** the Captur has two, main+ and precharge; pack negative is hard-wired. With
   both coils off the link (watched by the AMC3311) must be dead, which rules out a weld. Then precharge,
-  then main+ with precharge still held until it has picked up, then a check that the link reached the
-  pack. A soft trip keeps a closed pack closed but never starts a close.
+  then main+ with precharge still held until it has picked up, then precharge off for 300 ms: the link
+  must hold at the pack voltage. A charged link reads ~100 % with main+ open too, so the check is that it
+  doesn't decay (calibrated on the bench, [BRINGUP](docs/BRINGUP.md)). The close aborts, latched, on a
+  precharge deadline, a link reading above the pack, or a soft trip before it finishes. A soft trip keeps a
+  closed pack closed but never starts a close.
 - **Captur BMS:** kept awake by the 0x0F5 frame every 20 ms (counter + CRC-8) and read with UDS (29-bit,
   read-only) for the extreme cells, the cell sum, temperatures and SOC, as decoded on the bench. The
   precharge target is the cell sum scaled to the series string (half of it in 34S2P), and the sum must
@@ -103,8 +112,11 @@ J3 overhangs the top edge with its wire entry facing out, and the USB-C face sit
 ## Before ordering
 
 - Pinouts to check against datasheets: VND7050AJ (custom PowerSSO-16 footprint in `hw/lib`),
-  TPS3431 and SN74LVC1G74 (watchdog latch), SN74LV1T34 (5 V gate buffers), AMC3311, AQY212GS,
+  TPS3431, SN74LVC1G74 and SN74LVC1G17 (watchdog latch), SN74LV1T34 (5 V gate buffers), AMC3311, AQY212GS,
   H24VNT2B, and the SMMS0630 inductor on the SRP7028A land pattern.
+- Land patterns drawn from datasheet dimensions (`hw/lib/ze2.pretty`): the AQV214EHA (Panasonic's 1.5 x 1.9 mm
+  lands on 8.3 mm rows) and the Littelfuse 242 fuse (end-cap lands sized from the 3.0 x 8.4 mm body: check
+  against Littelfuse's drawing).
 - The Captur coils are measured: main 22.8 ohm (0.535 A at 12 V, pulls in at 5.5 V), precharge about
   56 ohm (0.2 A, 6.8 V), so the coil path carries under 0.8 A. Pump: any 12 V pump under about 3 A
   (see [Pump](#pump)); nothing to measure before ordering.
@@ -114,8 +126,9 @@ J3 overhangs the top edge with its wire entry facing out, and the USB-C face sit
   normally-closed contacts (MCM side).
 - AMC3311 stock at JLC is low: check before ordering, or fit by hand.
 - Check rotations in JLC's placement preview, especially U8/U9 (custom footprint).
-- Conformal-coat the HV strip. Full-bus gaps are held to 0.7 mm by a DRC rule (`hw/ze2-mcm-spoof.kicad_dru`);
-  IPC-2221 B2 asks 0.6 mm uncoated at 101-150 V.
+- Conformal-coat the HV strip. Every HV-class net (bus, ladder, taps, sense chain) keeps 0.7 mm from the
+  bus-negative side by a DRC rule (`hw/ze2-mcm-spoof.kicad_dru`); IPC-2221 B2 asks 0.6 mm uncoated at 101-150 V.
+  Creepage across the assembled parts, the harness and the enclosure still needs checking on the built unit.
 - J5 (USB-C): KiCad's footprint puts the peg holes 0.19 mm from pads A/B. Common on JLC boards, but check
   their NPTH-to-copper rule when ordering.
 - Check the Captur BMS protects both parallel strings in 34S2P.
@@ -129,6 +142,8 @@ J3 overhangs the top edge with its wire entry facing out, and the USB-C face sit
   - IMA bus log: the board logs it in bypass mode (SavvyCAN over Wi-Fi), with nothing transmitted.
   - Bus-sense divider: 1 % parts and a 92 % close check, so no meter trim is needed (`HV_DIV_X1000` is
     there if you want one).
+  - The link's bleed time constant, which the open-main check relies on: measured on the bench before the car
+    ([BRINGUP](docs/BRINGUP.md)).
 
 ### Pump
 
@@ -140,8 +155,9 @@ Choose the pump later; the board handles the common kinds without changes, set i
 | 2-wire, brushed | + to 13, - to 14 | 1, PWM at 20 kHz |
 | 3-wire PWM (Bosch-style signal input) | + to 13, ground to a spare GND, signal to 14 | 2, signal at 100 Hz (`pump_hz`, `pump_inv`) |
 
-Keep it under about 3 A: F2 (5 A) also feeds the coils. The board reads the pump line back (R102/R103 to
-GPIO35), so it reports an open circuit, a failed Q3, or a 3-wire pump that isn't pulling its signal up.
+Keep it under about 3 A: F2 (5 A) also feeds the coils. The board reads the pump line back through a threshold
+FET (R102/R103 into Q26's gate, Q26 pulling GPIO35 low), so the GPIO never sees the 12-16 V line, and it reports
+an open circuit, a failed Q3, or a 3-wire pump that isn't pulling its signal up.
 
 ### Captur LV connector to J2
 
@@ -159,12 +175,13 @@ GPIO35), so it reports an open circuit, a failed Q3, or a 3-wire pump that isn't
 ## Ordering at JLCPCB
 
 [`hw/out/jlc/`](hw/out/jlc/) has the gerbers, BOM and CPL. The BOM picks are in
-[`hw/jlc_parts.py`](hw/jlc_parts.py) and [`cost.md`](hw/out/jlc/cost.md) has the estimate: about $48 of
-parts per board, and 23 Extended SMT part types ($3.07 each on Economic; Standard charges $1.53 for every
-Basic and Extended type instead). Compare complete quotes for both. Fit the five Molex/Phoenix
-connectors by hand. Two parts aren't stocked at JLC (AQV214EH optoMOS,
-TPS3431 watchdog): use JLC global sourcing or fit them by hand. The ESP32-S3 module needs Standard
-assembly; fit it by hand to stay on Economic. The only passives kept
+[`hw/jlc_parts.py`](hw/jlc_parts.py) and [`cost.md`](hw/out/jlc/cost.md) has the estimate: about $53 of
+parts per board (cost.md has the current figures; Standard charges $1.53 for every Basic and Extended type,
+Economic $3.07 per Extended type). Order Standard PCBA with everything fitted: the ESP32-S3 module needs it, and
+the CPL includes the five Molex/Phoenix connectors at their body centres for JLC's THT assembly (check pin 1 and
+the mating side in JLC's preview). The AQV214EH optoMOS isn't stocked at JLC: global-source it. The TPS3431-Q1
+(TPS3431SQDRBRQ1, C2878091) has low LCSC stock: get it allocated before ordering. Ask JLC for separate 2- and
+5-board fully assembled quotes to see the fixed costs. The only passives kept
 Extended on purpose are the 0.1 % tap-ladder resistors, which set how evenly the MCM sees the blocks.
 
 ## Firmware
@@ -198,7 +215,7 @@ The steps it runs, from `hw/`:
 |---|---|
 | net classes, custom rules | `python3 project.py ze2-mcm-spoof` |
 | netlist + placement | `python3 build_board.py build/unrouted.kicad_pcb` (also writes `parts.json`) |
-| route | `python3 krt_route.py build/unrouted.kicad_pcb build/routed.kicad_pcb [ze2-mcm-spoof.kicad_pcb]`: real track widths, JLC standard rules, keep-out on the HV band; with the last argument only nets whose pads changed (or whose copper touches a changed part) are re-routed |
+| route | `python3 krt_route.py build/unrouted.kicad_pcb build/routed.kicad_pcb [ze2-mcm-spoof.kicad_pcb]`: the USB and CAN pairs coupled, the crystal nets first on F.Cu, then the rest at real track widths; JLC standard rules, no via in or touching an SMD pad, keep-out on the HV band; anything left incomplete gets a finishing pass that may use In1 (GND plane) at a high cost. With the last argument only nets whose pads changed, whose copper touches a changed part, or that were incomplete are re-routed |
 | dangling copper | `python3 cleanup.py build/routed.kicad_pcb` until it prints nothing |
 | coil/pump copper | `python3 widen_power.py build/routed.kicad_pcb build/finished.kicad_pcb` (1.0 mm where DRC allows, else 0.75 mm) |
 | silkscreen | `python3 tidy_silk.py build/finished.kicad_pcb build/tidy.kicad_pcb` |
@@ -216,8 +233,11 @@ protection in the netlist; the full-bus 0.7 mm rule; the JLC files against the b
 every line and Basic/Preferred passives; and the firmware against the hardware (GPIO map, CAN clock and
 bit timing, crystal load caps, HV divider scale, ADC1 inputs). `tests/host/` compiles the firmware's
 safety chain (BMS decode, safety ladder, contactor sequencer, ignition) with gcc against a model of the
-contactors, the watchdog latch and the bus sense, and runs 15 scenarios: a normal close, welds, sensor loss, a
-loop stall and resume, crank dips, stale or inconsistent BMS data. 8 more cover the pump drive and the NTC lines.
+contactors, the watchdog latch and the bus sense, and runs 23 scenarios: a normal close, welds, main+ stuck open
+(with the link partly and fully charged), a soft trip or an implausibly high link mid-close, a late precharge,
+sensor loss (bus and ignition), a loop stall and resume, crank dips, a reset while running, island loss, a
+millisecond-counter wrap, stale or inconsistent BMS data. 9 more cover the pump drive, the NTC lines and the
+island-health report.
 
 | Folder | Contents |
 |---|---|

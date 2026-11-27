@@ -5,5 +5,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-// valid: the ADC read worked. An invalid read changes nothing.
+// valid: the ADC read worked. An invalid read changes nothing; IGN_INVALID_MS of them is ignition_failed().
 bool ignition_update(uint32_t now_ms, bool valid, int32_t vbat_mv);
+// A real key-off has been seen: the supply read below IGN_OFF_MV for IGN_OFF_MS (not merely "not yet on" at
+// boot). Clears the unexpected-reset latch (safety.h).
+bool ignition_off_confirmed(void);
+bool ignition_failed(uint32_t now_ms);

@@ -2,7 +2,10 @@
 // with it); pack negative is hard-wired. Coils: common pin 7 (to COIL_RTN here), precharge pin 3 (~56 ohm,
 // 0.2 A), main pin 4 (22.8 ohm, 0.535 A); no internal diodes, so polarity doesn't matter.
 // Close: the link must be dead with everything open (with negative hard-wired, that rules out a welded main+ or
-// precharge), then precharge, then main+ with precharge still held until it has picked up, then verify.
+// precharge), then precharge, then main+ with precharge still held until it has picked up, then precharge off and
+// verify: the link must reach CLOSED_MIN_PCT and must not decay (an open main+ over a charged link reads ~100 %
+// too). An unfinished close aborts (latched fault) if start permission goes, the precharge deadline passes, or
+// the link reads implausibly above the pack.
 // The coil-return master FET follows U10, a flip-flop that each watchdog kick (WDI edge) clocks MCU_EN into and
 // the TPS3431 clears on a timeout. A stall the firmware notices on resume is a latched fault, so the next kick
 // can never quietly re-energise coils the firmware has stopped tracking.
@@ -21,3 +24,4 @@ bool contactors_faulted(void);
 const char *contactors_fault(void);
 void contactors_clear_fault(void);     // key-off only
 void contactors_kick_watchdog(uint32_t now_ms);   // first thing in every control-loop pass
+int32_t contactors_link_mv(void);      // last link reading (status page); -1 if it wasn't valid

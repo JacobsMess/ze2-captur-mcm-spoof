@@ -373,10 +373,10 @@
  "C5": {
   "fp": [
    "Capacitor_SMD",
-   "C_0805_2012Metric"
+   "C_0603_1608Metric"
   ],
   "val": "100n",
-  "mpn": "100n 0805 X7R",
+  "mpn": "100n 0603 X7R",
   "nets": {
    "1": "BUCK_CB",
    "2": "BUCK_SW"
@@ -592,10 +592,10 @@
  "C10": {
   "fp": [
    "Capacitor_SMD",
-   "C_0805_2012Metric"
+   "C_0603_1608Metric"
   ],
   "val": "100n",
-  "mpn": "100n 0805 X7R",
+  "mpn": "100n 0603 X7R",
   "nets": {
    "1": "IG_SENSE",
    "2": "GND"
@@ -685,10 +685,10 @@
  "C12": {
   "fp": [
    "Capacitor_SMD",
-   "C_0805_2012Metric"
+   "C_0603_1608Metric"
   ],
   "val": "100n",
-  "mpn": "100n 0805 X7R",
+  "mpn": "100n 0603 X7R",
   "nets": {
    "1": "+3V3",
    "2": "GND"
@@ -817,10 +817,10 @@
  "C14": {
   "fp": [
    "Capacitor_SMD",
-   "C_0805_2012Metric"
+   "C_0603_1608Metric"
   ],
   "val": "100n",
-  "mpn": "100n 0805 X7R",
+  "mpn": "100n 0603 X7R",
   "nets": {
    "1": "+5V",
    "2": "GND"
@@ -835,10 +835,10 @@
  "C15": {
   "fp": [
    "Capacitor_SMD",
-   "C_0805_2012Metric"
+   "C_0603_1608Metric"
   ],
   "val": "100n",
-  "mpn": "100n 0805 X7R",
+  "mpn": "100n 0603 X7R",
   "nets": {
    "1": "+3V3",
    "2": "GND"
@@ -974,10 +974,10 @@
  "C17": {
   "fp": [
    "Capacitor_SMD",
-   "C_0805_2012Metric"
+   "C_0603_1608Metric"
   ],
   "val": "100n",
-  "mpn": "100n 0805 X7R",
+  "mpn": "100n 0603 X7R",
   "nets": {
    "1": "+3V3",
    "2": "GND"
@@ -1072,17 +1072,17 @@
  "C20": {
   "fp": [
    "Capacitor_SMD",
-   "C_0805_2012Metric"
+   "C_0603_1608Metric"
   ],
   "val": "100n",
-  "mpn": "100n 0805 X7R",
+  "mpn": "100n 0603 X7R",
   "nets": {
    "1": "+5V",
    "2": "GND"
   },
   "pos": [
-   36.0,
-   29.5
+   31.6,
+   37.5
   ],
   "rot": 0,
   "note": ""
@@ -1231,10 +1231,10 @@
  "C74": {
   "fp": [
    "Capacitor_SMD",
-   "C_0805_2012Metric"
+   "C_0603_1608Metric"
   ],
   "val": "100n",
-  "mpn": "100n 0805 X7R",
+  "mpn": "100n 0603 X7R",
   "nets": {
    "1": "+3V3",
    "2": "GND"
@@ -1273,10 +1273,10 @@
  "C75": {
   "fp": [
    "Capacitor_SMD",
-   "C_0805_2012Metric"
+   "C_0603_1608Metric"
   ],
   "val": "100n",
-  "mpn": "100n 0805 X7R",
+  "mpn": "100n 0603 X7R",
   "nets": {
    "1": "+5V",
    "2": "GND"
@@ -1432,10 +1432,10 @@
  "C78": {
   "fp": [
    "Capacitor_SMD",
-   "C_0805_2012Metric"
+   "C_0603_1608Metric"
   ],
   "val": "100n",
-  "mpn": "100n 0805 X7R",
+  "mpn": "100n 0603 X7R",
   "nets": {
    "1": "+3V3",
    "2": "GND"
@@ -1474,10 +1474,10 @@
  "C79": {
   "fp": [
    "Capacitor_SMD",
-   "C_0805_2012Metric"
+   "C_0603_1608Metric"
   ],
   "val": "100n",
-  "mpn": "100n 0805 X7R",
+  "mpn": "100n 0603 X7R",
   "nets": {
    "1": "+5V",
    "2": "GND"
@@ -2018,10 +2018,10 @@
  "C23": {
   "fp": [
    "Capacitor_SMD",
-   "C_0805_2012Metric"
+   "C_0603_1608Metric"
   ],
   "val": "100n",
-  "mpn": "100n 0805 X7R",
+  "mpn": "100n 0603 X7R",
   "nets": {
    "1": "VCOIL",
    "2": "GND"
@@ -2036,10 +2036,10 @@
  "C24": {
   "fp": [
    "Capacitor_SMD",
-   "C_0805_2012Metric"
+   "C_0603_1608Metric"
   ],
   "val": "100n",
-  "mpn": "100n 0805 X7R",
+  "mpn": "100n 0603 X7R",
   "nets": {
    "1": "VCOIL",
    "2": "GND"
@@ -2155,7 +2155,7 @@
    "3": "NC_U10_QN",
    "4": "GND",
    "5": "MASTER_EN",
-   "6": "WDT_OK",
+   "6": "WDT_CLR",
    "7": "+3V3",
    "8": "+3V3"
   },
@@ -2169,10 +2169,10 @@
  "C26": {
   "fp": [
    "Capacitor_SMD",
-   "C_0805_2012Metric"
+   "C_0603_1608Metric"
   ],
   "val": "100n",
-  "mpn": "100n 0805 X7R",
+  "mpn": "100n 0603 X7R",
   "nets": {
    "1": "+3V3",
    "2": "GND"
@@ -2208,11 +2208,11 @@
    "VSON-8-1EP_3x3mm_P0.65mm_EP1.65x2.4mm"
   ],
   "val": "TPS3431-Q1",
-  "mpn": "TPS3431SDRBRQ1",
+  "mpn": "TPS3431SQDRBRQ1",
   "nets": {
    "1": "+3V3",
    "2": "NC_CWD",
-   "3": "+3V3",
+   "3": "NC_U11_EN",
    "4": "GND",
    "5": "+3V3",
    "6": "WDI",
@@ -2248,10 +2248,10 @@
  "C27": {
   "fp": [
    "Capacitor_SMD",
-   "C_0805_2012Metric"
+   "C_0603_1608Metric"
   ],
   "val": "100n",
-  "mpn": "100n 0805 X7R",
+  "mpn": "100n 0603 X7R",
   "nets": {
    "1": "WDT_OK",
    "2": "GND"
@@ -2266,10 +2266,10 @@
  "C28": {
   "fp": [
    "Capacitor_SMD",
-   "C_0805_2012Metric"
+   "C_0603_1608Metric"
   ],
   "val": "100n",
-  "mpn": "100n 0805 X7R",
+  "mpn": "100n 0603 X7R",
   "nets": {
    "1": "+3V3",
    "2": "GND"
@@ -2437,11 +2437,11 @@
    "Resistor_SMD",
    "R_0805_2012Metric"
   ],
-  "val": "56k",
-  "mpn": "56k 0805 1%",
+  "val": "200k",
+  "mpn": "200k 0805 1%",
   "nets": {
    "1": "PUMP_N",
-   "2": "PUMP_SENSE"
+   "2": "PUMP_G"
   },
   "pos": [
    57.5,
@@ -2455,10 +2455,10 @@
    "Resistor_SMD",
    "R_0805_2012Metric"
   ],
-  "val": "22k",
-  "mpn": "22k 0805 1%",
+  "val": "100k",
+  "mpn": "100k 0805 1%",
   "nets": {
-   "1": "PUMP_SENSE",
+   "1": "PUMP_G",
    "2": "GND"
   },
   "pos": [
@@ -2495,10 +2495,10 @@
  "C30": {
   "fp": [
    "Capacitor_SMD",
-   "C_0805_2012Metric"
+   "C_0603_1608Metric"
   ],
   "val": "100n",
-  "mpn": "100n 0805 X7R",
+  "mpn": "100n 0603 X7R",
   "nets": {
    "1": "+3V3",
    "2": "GND"
@@ -2513,10 +2513,10 @@
  "C31": {
   "fp": [
    "Capacitor_SMD",
-   "C_0805_2012Metric"
+   "C_0603_1608Metric"
   ],
   "val": "100n",
-  "mpn": "100n 0805 X7R",
+  "mpn": "100n 0603 X7R",
   "nets": {
    "1": "ISL5V",
    "2": "ISLGND"
@@ -2665,10 +2665,10 @@
  "C32": {
   "fp": [
    "Capacitor_SMD",
-   "C_0805_2012Metric"
+   "C_0603_1608Metric"
   ],
   "val": "100n",
-  "mpn": "100n 0805 X7R",
+  "mpn": "100n 0603 X7R",
   "nets": {
    "1": "ISL5V",
    "2": "ISLGND"
@@ -2713,10 +2713,10 @@
  "C33": {
   "fp": [
    "Capacitor_SMD",
-   "C_0805_2012Metric"
+   "C_0603_1608Metric"
   ],
   "val": "100n",
-  "mpn": "100n 0805 X7R",
+  "mpn": "100n 0603 X7R",
   "nets": {
    "1": "ISL5V",
    "2": "ISLGND"
@@ -2812,8 +2812,8 @@
    "2": "SUM_P"
   },
   "pos": [
-   57.0,
-   26.5
+   60.0,
+   11.45
   ],
   "rot": 0,
   "note": ""
@@ -2981,10 +2981,10 @@
  "C35": {
   "fp": [
    "Capacitor_SMD",
-   "C_0805_2012Metric"
+   "C_0603_1608Metric"
   ],
   "val": "100n",
-  "mpn": "100n 0805 X7R",
+  "mpn": "100n 0603 X7R",
   "nets": {
    "1": "ISL5V",
    "2": "ISLGND"
@@ -2999,10 +2999,10 @@
  "C36": {
   "fp": [
    "Capacitor_SMD",
-   "C_0805_2012Metric"
+   "C_0603_1608Metric"
   ],
   "val": "100n",
-  "mpn": "100n 0805 X7R",
+  "mpn": "100n 0603 X7R",
   "nets": {
    "1": "ISL5V",
    "2": "ISLGND"
@@ -3282,8 +3282,8 @@
  },
  "K2": {
   "fp": [
-   "Package_DIP",
-   "SMDIP-6_W7.62mm"
+   "ze2",
+   "Panasonic_PhotoMOS_DIP6_SMD_W8.3mm"
   ],
   "val": "AQV214EH",
   "mpn": "Panasonic AQV214EHAX (400 V)",
@@ -3292,7 +3292,7 @@
    "2": "GND",
    "3": "NC_K2_3",
    "4": "DIV_TOP_IN",
-   "5": "NC_K2_5",
+   "5": "K2_P5",
    "6": "DIV_TOP"
   },
   "pos": [
@@ -3304,8 +3304,8 @@
  },
  "K3": {
   "fp": [
-   "Package_DIP",
-   "SMDIP-6_W7.62mm"
+   "ze2",
+   "Panasonic_PhotoMOS_DIP6_SMD_W8.3mm"
   ],
   "val": "AQV214EH",
   "mpn": "Panasonic AQV214EHAX (400 V)",
@@ -3314,7 +3314,7 @@
    "2": "GND",
    "3": "NC_K3_3",
    "4": "DIV_BOT",
-   "5": "NC_K3_5",
+   "5": "K3_P5",
    "6": "DIV_BOT_IN"
   },
   "pos": [
@@ -3336,7 +3336,7 @@
    "2": "K2_LED"
   },
   "pos": [
-   82.0,
+   81.6,
    44.0
   ],
   "rot": 90,
@@ -3354,7 +3354,7 @@
    "2": "K3_LED"
   },
   "pos": [
-   82.0,
+   81.6,
    56.0
   ],
   "rot": 90,
@@ -3365,10 +3365,10 @@
    "Resistor_SMD",
    "R_2512_6332Metric"
   ],
-  "val": "1k 1W fusible",
-  "mpn": "25121WF1001T4E 1k 1W 2512 (fusible preferred if sourced)",
+  "val": "330 1W",
+  "mpn": "25121WJ0331T4E 330R 1W 2512",
   "nets": {
-   "1": "BUS_P",
+   "1": "BUS_P_FS",
    "2": "DIV_TOP_IN"
   },
   "pos": [
@@ -3383,11 +3383,11 @@
    "Resistor_SMD",
    "R_2512_6332Metric"
   ],
-  "val": "1k 1W fusible",
-  "mpn": "25121WF1001T4E 1k 1W 2512 (fusible preferred if sourced)",
+  "val": "330 1W",
+  "mpn": "25121WJ0331T4E 330R 1W 2512",
   "nets": {
    "1": "DIV_BOT_IN",
-   "2": "BUS_N"
+   "2": "BUS_N_FS"
   },
   "pos": [
    97.0,
@@ -3401,8 +3401,8 @@
    "Resistor_SMD",
    "R_2512_6332Metric"
   ],
-  "val": "1k 1W fusible",
-  "mpn": "25121WF1001T4E 1k 1W 2512 (fusible preferred if sourced)",
+  "val": "10k 1W",
+  "mpn": "25121WF1002T4E 10k 1W 2512 1%",
   "nets": {
    "1": "BUS_P",
    "2": "BUS_P_F"
@@ -3419,8 +3419,8 @@
    "Resistor_SMD",
    "R_2512_6332Metric"
   ],
-  "val": "1k 1W fusible",
-  "mpn": "25121WF1001T4E 1k 1W 2512 (fusible preferred if sourced)",
+  "val": "10k 1W",
+  "mpn": "25121WF1002T4E 10k 1W 2512 1%",
   "nets": {
    "1": "BUS_N",
    "2": "BUS_N_F"
@@ -3975,10 +3975,10 @@
  "C41": {
   "fp": [
    "Capacitor_SMD",
-   "C_0805_2012Metric"
+   "C_0603_1608Metric"
   ],
   "val": "1n",
-  "mpn": "1n 0805 X7R",
+  "mpn": "1n 0603 X7R",
   "nets": {
    "1": "SENSE_MID",
    "2": "BUS_N_F"
@@ -4046,6 +4046,118 @@
   "pos": [
    116.5,
    94.5
+  ],
+  "rot": 0,
+  "note": ""
+ },
+ "Q26": {
+  "fp": [
+   "Package_TO_SOT_SMD",
+   "SOT-23"
+  ],
+  "val": "2N7002",
+  "mpn": "2N7002",
+  "nets": {
+   "1": "PUMP_G",
+   "2": "GND",
+   "3": "PUMP_SENSE"
+  },
+  "pos": [
+   61.3,
+   41.6
+  ],
+  "rot": 0,
+  "note": ""
+ },
+ "R104": {
+  "fp": [
+   "Resistor_SMD",
+   "R_0805_2012Metric"
+  ],
+  "val": "10k",
+  "mpn": "10k 0805 1%",
+  "nets": {
+   "1": "+3V3",
+   "2": "PUMP_SENSE"
+  },
+  "pos": [
+   57.5,
+   45.2
+  ],
+  "rot": 0,
+  "note": ""
+ },
+ "U25": {
+  "fp": [
+   "Package_TO_SOT_SMD",
+   "SOT-353_SC-70-5"
+  ],
+  "val": "74LVC1G17",
+  "mpn": "SN74LVC1G17DCKR",
+  "nets": {
+   "1": "NC_U25_1",
+   "2": "WDT_OK",
+   "3": "GND",
+   "4": "WDT_CLR",
+   "5": "+3V3"
+  },
+  "pos": [
+   37.5,
+   60.8
+  ],
+  "rot": 0,
+  "note": ""
+ },
+ "C51": {
+  "fp": [
+   "Capacitor_SMD",
+   "C_0603_1608Metric"
+  ],
+  "val": "100n",
+  "mpn": "100n 0603 X7R",
+  "nets": {
+   "1": "+3V3",
+   "2": "GND"
+  },
+  "pos": [
+   34.0,
+   60.8
+  ],
+  "rot": 0,
+  "note": ""
+ },
+ "F3": {
+  "fp": [
+   "ze2",
+   "Fuse_Littelfuse_242_SMD_L8.4mm_D3.0mm"
+  ],
+  "val": "50mA 250V",
+  "mpn": "Littelfuse 0242.050UR",
+  "nets": {
+   "1": "BUS_P",
+   "2": "BUS_P_FS"
+  },
+  "pos": [
+   104.0,
+   13.8
+  ],
+  "rot": 0,
+  "note": ""
+ },
+ "F4": {
+  "fp": [
+   "ze2",
+   "Fuse_Littelfuse_242_SMD_L8.4mm_D3.0mm"
+  ],
+  "val": "50mA 250V",
+  "mpn": "Littelfuse 0242.050UR",
+  "nets": {
+   "1": "BUS_N_FS",
+   "2": "BUS_N"
+  },
+  "pos": [
+   101.0,
+   80.5
   ],
   "rot": 0,
   "note": ""

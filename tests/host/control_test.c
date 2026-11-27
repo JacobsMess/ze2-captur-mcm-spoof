@@ -2,8 +2,9 @@
 // control.c and zombie.c, compiled for the PC against a small model of the board and pack:
 //   - the Captur BMS answering UDS reads (DIDs and scales as on the bench);
 //   - Captur contactors (main+, precharge in parallel with it, negative hard-wired) with optional welds;
-//   - the U10/U11 enable latch: WDI rising edge clocks MCU_EN, 1.36 s without an edge clears it;
-//   - the AMC3311 sense (valid or not) and the board supply.
+//   - the U10/U11 enable latch: a WDI rising edge clocks MCU_EN into U10; U11 counts falling edges, and 1.36 s
+//     without one clears U10;
+//   - the AMC3311 sense (valid or not) and the board supply (and whether its ADC read works).
 // One scenario per process (the firmware keeps static state): ./control_test <scenario>; exit 0 = pass.
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,18 +20,17 @@
 
 // ------------------------------------------------------------------ board and pack model
 static bool out[OUT_COUNT];
-static bool weld_pos, weld_pre, sense_ok = true, latch_q;
+static bool weld_pos, weld_pre, main_open, sense_ok = true, vbat_ok = true, latch_q;
+static int pre_div = 15;   // precharge: link closes 1/pre_div of the gap per 10 ms
 static int32_t pack_mv = 125630, link_mv, link_forced = -1, vbat_mv = 13800;   // 34S2P: 34 x 3.695 V
-static uint32_t now = 1000, last_edge;
+static uint32_t now = 1000, last_kick;
 static can_frame_t last351, keepalive[4];
 static int n_keepalive;
 
 void hal_out(hal_out_t o, bool on)
 {
-    if (o == OUT_WDI && on && !out[OUT_WDI]) {   // rising edge: U10 clocks MCU_EN in
-        latch_q = out[OUT_MCU_EN];
-        last_edge = now;
-    }
+    if (o == OUT_WDI && on && !out[OUT_WDI]) latch_q = out[OUT_MCU_EN];   // rising edge: U10 clocks MCU_EN in
+    if (o == OUT_WDI && !on && out[OUT_WDI]) last_kick = now;              // falling edge: U11 kicked
     out[o] = on;
 }
 
@@ -43,7 +43,7 @@ bool hal_bus_mv(int32_t *mv)
 bool hal_vbat_mv(int32_t *mv)
 {
     *mv = vbat_mv;
-    return true;
+    return vbat_ok;
 }
 
 // ------------------------------------------------------------------ Captur BMS (UDS 22 replies)
@@ -90,10 +90,10 @@ static bool coil(hal_out_t o) { return out[o] && latch_q; }   // a coil needs it
 
 static void model_step(void)
 {
-    if (now - last_edge >= 1360) latch_q = false;   // TPS3431 minimum timeout clears U10
-    bool pos = coil(OUT_HS_MAINP) || weld_pos, pre = coil(OUT_HS_PRE) || weld_pre;   // negative hard-wired
+    if (now - last_kick >= 1360) latch_q = false;   // TPS3431 minimum timeout clears U10
+    bool pos = (coil(OUT_HS_MAINP) && !main_open) || weld_pos, pre = coil(OUT_HS_PRE) || weld_pre;   // neg. wired
     if (pos) link_mv = pack_mv;
-    else if (pre) link_mv += (pack_mv - link_mv) / 15;   // tau ~150 ms at 10 ms steps
+    else if (pre) link_mv += (pack_mv - link_mv) / pre_div;   // tau ~150 ms at 10 ms steps by default
     else link_mv -= link_mv / 500;                            // bleed, tau ~5 s
 }
 
@@ -121,13 +121,16 @@ static bool any_coil(void) { return coil(OUT_HS_MAINN) || coil(OUT_HS_MAINP) || 
 // ------------------------------------------------------------------ scenarios
 static void normal_close(void)
 {
-    bool saw_overlap = false, pos_before_overlap = false;
+    bool saw_overlap = false, pos_before_overlap = false, taps_early = false;
     for (int i = 0; i < 300 && contactors_state() != CT_CLOSED; i++) {
         step();
         if (coil(OUT_HS_MAINP) && !coil(OUT_HS_PRE) && !saw_overlap) pos_before_overlap = true;
         if (coil(OUT_HS_MAINP) && coil(OUT_HS_PRE)) saw_overlap = true;
+        taps_early |= g_safety.taps_enabled;
     }
     CHECK(contactors_state() == CT_CLOSED, "closes on a healthy pack");
+    CHECK(!taps_early, "taps stay off until closure is verified");
+    step();
     CHECK(saw_overlap && !pos_before_overlap, "precharge held while main+ picks up");
     CHECK(coil(OUT_HS_MAINP) && !coil(OUT_HS_PRE) && !out[OUT_HS_MAINN], "closed: main+ on, precharge off, spare off");
     CHECK(g_pack.pack_mv > 124000 && g_pack.pack_mv < 127000, "34S2P reference is half the 68-cell sum");
@@ -291,6 +294,94 @@ static void decoder_checks(void)
     CHECK(g_pack.temp_min_c == 18 && g_pack.temp_max_c == 18, "(raw - 640) / 16");
 }
 
+// main+ coil energised but the contact never makes: the link, charged through precharge, reads ~100 %
+static void main_stuck_open(void)
+{
+    main_open = true;
+    bool taps = false, closed = false;
+    for (int i = 0; i < 300; i++) { step(); taps |= g_safety.taps_enabled; closed |= contactors_state() == CT_CLOSED; }
+    CHECK(!closed && !taps, "never CLOSED, taps never on");
+    CHECK(contactors_faulted() && strstr(contactors_fault(), "main+"), "main+ fault (low or decaying link)");
+    CHECK(!any_coil(), "everything open");
+}
+
+// same, with the link fully charged when precharge drops (worst case for a voltage-only check)
+static void main_stuck_open_full_link(void)
+{
+    main_open = true;
+    pre_div = 4;              // precharge reaches ~100 % during the 100 ms overlap
+    for (int i = 0; i < 300; i++) step();
+    CHECK(contactors_faulted() && strstr(contactors_fault(), "main+ open"), "caught by droop, not by level");
+}
+
+static void soft_trip_during_precharge(void)
+{
+    for (int i = 0; i < 100 && contactors_state() != CT_PRECHARGE; i++) step();
+    CHECK(contactors_state() == CT_PRECHARGE, "precharging");
+    cell_max = 4185;          // soft limit crossed mid-close
+    bool main_cmd = false;
+    for (int i = 0; i < 200; i++) { step(); main_cmd |= out[OUT_HS_MAINP]; }
+    CHECK(!main_cmd && contactors_faulted() && !any_coil(), "close aborted, main+ never commanded");
+}
+
+static void link_reads_high(void)
+{
+    for (int i = 0; i < 100 && contactors_state() != CT_PRECHARGE; i++) step();
+    link_forced = 170000;     // bus sense jumps to 170 V with the BMS still saying 125.6 V
+    bool main_cmd = false;
+    for (int i = 0; i < 100; i++) { step(); main_cmd |= out[OUT_HS_MAINP]; }
+    CHECK(!main_cmd && contactors_faulted() && strstr(contactors_fault(), "above pack"), "implausible link: fault");
+}
+
+static void late_precharge(void)
+{
+    pre_div = 140;            // tau 1.4 s: 90 % only after ~3.2 s
+    bool main_cmd = false;
+    for (int i = 0; i < 500; i++) { step(); main_cmd |= out[OUT_HS_MAINP]; }
+    CHECK(!main_cmd && contactors_faulted() && strstr(contactors_fault(), "timeout"), "deadline wins over a late rise");
+}
+
+static void ignition_sense_lost(void)
+{
+    normal_close();
+    vbat_ok = false;          // ADC stops returning valid data, CPU still running
+    run(IGN_INVALID_MS + 30);
+    CHECK(!any_coil() && contactors_state() != CT_CLOSED, "coils off within IGN_INVALID_MS");
+    vbat_ok = true;
+    run(2000);
+    CHECK(!any_coil() && !g_safety.contactors_permitted, "latched after the sense recovers");
+}
+
+static void reset_latch(void)
+{
+    safety_boot_latch("reset while running: brownout");
+    run(2000);
+    CHECK(!any_coil() && !out[OUT_HS_PRE], "no close after an unexpected reset with the key on");
+    vbat_mv = 0;              // real key-off
+    run(2500);
+    vbat_mv = 13800;
+    for (int i = 0; i < 400 && contactors_state() != CT_CLOSED; i++) step();
+    CHECK(contactors_state() == CT_CLOSED, "closes after a real key-off");
+}
+
+static void taps_need_island(void)
+{
+    normal_close();
+    safety_island_report(false);
+    step();
+    CHECK(contactors_state() == CT_CLOSED && !g_safety.taps_enabled, "island lost: taps float, pack stays closed");
+    safety_island_report(true);
+    step();
+    CHECK(g_safety.taps_enabled, "island back: taps on");
+}
+
+static void clock_wrap(void)
+{
+    now = 0xFFFFFFFFu - 300;  // 32-bit millisecond counter wraps mid-close
+    last_kick = now;
+    normal_close();
+}
+
 static const struct { const char *name; void (*fn)(void); } SCEN[] = {
     {"normal_close", normal_close}, {"only_cells", only_cells}, {"stale_groups_stage2", stale_groups_stage2},
     {"live_link_while_open", live_link_while_open}, {"soft_trip_before_start", soft_trip_before_start},
@@ -298,7 +389,11 @@ static const struct { const char *name; void (*fn)(void); } SCEN[] = {
     {"welded_pos", welded_pos}, {"welded_pre", welded_pre}, {"sense_invalid", sense_invalid},
     {"sense_lost_while_closed", sense_lost_while_closed}, {"stall_and_resume", stall_and_resume},
     {"crank_dip_keeps_trip", crank_dip_keeps_trip}, {"decoder_checks", decoder_checks},
-    {"keepalive_frames", keepalive_frames},
+    {"keepalive_frames", keepalive_frames}, {"main_stuck_open", main_stuck_open},
+    {"main_stuck_open_full_link", main_stuck_open_full_link},
+    {"soft_trip_during_precharge", soft_trip_during_precharge}, {"link_reads_high", link_reads_high},
+    {"late_precharge", late_precharge}, {"ignition_sense_lost", ignition_sense_lost}, {"reset_latch", reset_latch},
+    {"taps_need_island", taps_need_island}, {"clock_wrap", clock_wrap},
 };
 
 int main(int argc, char **argv)
@@ -309,6 +404,7 @@ int main(int argc, char **argv)
     }
     captur_set_series(PACK_SERIES);
     contactors_init();
+    safety_island_report(true);   // the island model isn't part of this binary: healthy unless a test says not
     for (size_t i = 0; i < sizeof SCEN / sizeof SCEN[0]; i++) {
         if (strcmp(argv[1], SCEN[i].name)) continue;
         SCEN[i].fn();

@@ -84,6 +84,8 @@ void spoof_tick(uint32_t now_ms)
     static bool fitted;
     static uint32_t last_write;
     static int trim_ch;
+    static uint32_t last_ok;
+    static bool ever_ok;
     const pack_state_t *p = &g_pack;
 
     if (!fitted) fitted = characterise();   // retried until the island (MCM 5 V) answers
@@ -115,15 +117,24 @@ void spoof_tick(uint32_t now_ms)
             g_spoof.ntc_node_v[i] = spoof_ntc_node_volts(&s_fit[i], g_spoof.ntc_c[i]);
             g_spoof.dac[i] = code(drive_for(i, g_spoof.ntc_node_v[i]));
         }
-        hal_dac_write4(g_spoof.dac);
+        bool wrote = hal_dac_write4(g_spoof.dac);
         // close the loop on one line per pass with the readback: soaks up DAC, op-amp and fit errors
         int32_t mv;
-        if (hal_adc_island(ADS_TBATT, trim_ch, &mv)) {
+        bool read = hal_adc_island(ADS_TBATT, trim_ch, &mv);
+        if (wrote && read) {
+            last_ok = now_ms;
+            ever_ok = true;
+        }
+        if (read) {
             float t = s_trim[trim_ch] + 0.5f * (g_spoof.ntc_node_v[trim_ch] - mv / 1000.0f) / s_fit[trim_ch].slope;
             s_trim[trim_ch] = t > TRIM_MAX ? TRIM_MAX : t < -TRIM_MAX ? -TRIM_MAX : t;
         }
         trim_ch = (trim_ch + 1) % 3;
     }
     for (int i = 0; i < 3; i++) g_spoof.fit[i] = s_fit[i];
+    // island I/O failing for ISLAND_FAIL_MS: the NTC and Hall outputs are no longer ours, so the taps float
+    // (safety.c) and the MCM faults rather than running on stale analogue values
+    g_spoof.island_ok = fitted && ever_ok && now_ms - last_ok < ISLAND_FAIL_MS;
+    safety_island_report(g_spoof.island_ok);
     hal_out(OUT_OPTO_EN, g_safety.taps_enabled);
 }

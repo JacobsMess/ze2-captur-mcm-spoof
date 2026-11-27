@@ -1,12 +1,14 @@
 // IMA bus man-in-the-middle. BYPASS: K4 relaxed, the IMA bus is one piece and both CAN controllers just listen.
 // SPLIT: K4 energised, CAN2 (MCM side) and CAN3 (PCM side) are separate buses and every frame is forwarded
-// to the other side, through the rewrite hooks. Falls back to BYPASS (latched until key-off) if either half
-// goes quiet while split.
+// to the other side, through the rewrite hooks. ARMING: both controllers asked for normal mode; K4 is energised
+// only once both confirm it. Falls back to BYPASS (latched until key-off) if a controller doesn't confirm in
+// time, leaves normal mode, or either half goes quiet while split. A hung CPU is reset by the task watchdog
+// (main.c), which releases RELAY_SPLIT, so K4 drops back to bypass.
 #pragma once
 #include <stdbool.h>
 #include "can_types.h"
 
-typedef enum { GW_BYPASS, GW_SPLIT, GW_FAILED } gw_state_t;
+typedef enum { GW_BYPASS, GW_SPLIT, GW_FAILED, GW_ARMING } gw_state_t;
 
 // a rewrite hook may edit the frame in place; return false to drop it
 typedef bool (*gw_hook_t)(bus_id_t from, can_frame_t *f);

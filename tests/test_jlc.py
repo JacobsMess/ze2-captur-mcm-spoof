@@ -13,28 +13,32 @@ def rows(name):
         return list(csv.DictReader(fh))
 
 
-def smd_refs(board):
-    return {f.GetReference() for f in board.GetFootprints()
-            if f.GetAttributes() & pcbnew.FP_SMD and not f.GetAttributes() & pcbnew.FP_EXCLUDE_FROM_POS_FILES}
+def bom_refs():
+    refs = set()
+    for r in rows("bom.csv"):
+        refs |= {d.strip() for d in r["Designator"].split(",")}
+    return refs
 
 
 def test_cpl_matches_board(board):
+    """Every BOM part is placed (SMT and THT connectors), each at its board position; THT rows at the body centre."""
     cpl = {r["Designator"]: r for r in rows("cpl.csv")}
-    assert set(cpl) == smd_refs(board)
+    assert set(cpl) == bom_refs()
+    offs = set()
     for ref, r in cpl.items():
         f = board.FindFootprintByReference(ref)
-        x, y = mm(f.GetPosition().x) - OX, -(mm(f.GetPosition().y) - OY)
+        p = f.GetPosition()
+        if f.GetAttributes() & pcbnew.FP_THROUGH_HOLE:
+            p = f.GetCourtyard(pcbnew.F_CrtYd).BBox().Centre()
+        x, y = mm(p.x) - OX, -(mm(p.y) - OY)
         # kicad-cli writes positions relative to the page origin; compare offsets between parts instead
-        r["_xy"] = (float(r["Mid X"].rstrip("mm")) - x, float(r["Mid Y"].rstrip("mm")) - y)
-    offs = {tuple(round(v, 2) for v in r["_xy"]) for r in cpl.values()}
+        offs.add((round(float(r["Mid X"].rstrip("mm")) - x, 2), round(float(r["Mid Y"].rstrip("mm")) - y, 2)))
     assert len(offs) == 1, f"CPL positions don't track the board: {sorted(offs)[:3]}"
+    assert {"J1", "J2", "J3", "J4", "J6"} <= set(cpl), "THT connectors go to JLC with the SMT parts"
 
 
 def test_bom_covers_every_placed_part():
-    bom = set()
-    for r in rows("bom.csv"):
-        bom |= {d.strip() for d in r["Designator"].split(",")}
-    assert {r["Designator"] for r in rows("cpl.csv")} <= bom
+    assert {r["Designator"] for r in rows("cpl.csv")} <= bom_refs()
 
 
 def test_gerber_zip_complete():
@@ -50,9 +54,9 @@ def test_every_bom_line_has_an_lcsc_number_or_is_flagged():
 
 
 def test_passives_use_basic_or_preferred_parts():
-    # only the matched 0.1 % tap ladder, the 2512 HV series resistors and parts with no basic
-    # equivalent at JLC (crystal, PTCs, power inductor) may add extended-part fees
-    allowed = {"C406729", "C54315", "C9010", "C960026", "C19078763", "C128694"}
+    # only the matched 0.1 % tap ladder, the 2512 HV series resistors (330R ladder ends, 10k sense ends) and parts
+    # with no basic equivalent at JLC (crystal, PTCs, power inductor, the HV fuses) may add extended-part fees
+    allowed = {"C406729", "C19866", "C270956", "C9010", "C960026", "C19078763", "C128694", "C178911"}
     for r in rows("bom.csv"):
         if r["Footprint"].startswith(("R_", "C_")) or r["LCSC Part #"] in allowed:
             assert r["Class"] in ("B", "P") or r["LCSC Part #"] in allowed, (r["Designator"], r["LCSC Part #"])

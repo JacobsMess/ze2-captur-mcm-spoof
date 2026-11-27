@@ -19,6 +19,7 @@ typedef struct {
     float offset_mv;        // added to the Hall signal (+ = MCM sees more discharge)
     uint16_t dac[4];
     ntc_fit_t fit[3];
+    bool island_ok;         // DAC write + ADC readback succeeded within ISLAND_FAIL_MS
 } spoof_out_t;
 
 extern spoof_out_t g_spoof;

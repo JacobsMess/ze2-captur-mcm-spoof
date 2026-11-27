@@ -9,7 +9,7 @@ def cls(name, clr, w, vd=0.6, vdr=0.3):
 
 PATTERNS = {
     "Power": ["VBAT_P", "VIG_*", "VCOIL*", "COIL_*", "BMS12V", "PUMP_N", "BUCK_SW", "+5V", "LM_GATE"],
-    "HV": ["BUS_P*", "DIV*", "TAP*", "VHB*", "SNS*"],
+    "HV": ["BUS_P*", "DIV*", "TAP*", "VHB*", "SNS*", "K2_P5", "K3_P5"],
     "HVLOW": ["BUS_N*", "SENSE_MID", "HV5V*"],
 }
 pro = {
@@ -24,11 +24,13 @@ pro = {
 }
 json.dump(pro, open(sys.argv[1] + ".kicad_pro", "w"), indent=2)
 
-# Full-bus pairs: the BUS_P side against everything tied to the bus-negative side (the AMC3311's HV supply and
-# input, the bottom of the divider). 0.7 mm is the brief's figure (IPC-2221 B2 asks 0.6 mm at 101-150 V uncoated).
+# Every HV-class net (bus positive, tap ladder and taps, sense chain, both sides of each zero-ohm link and fuse)
+# against everything tied to the bus-negative side (the AMC3311's HV supply and input, the divider bottom):
+# 0.7 mm, i.e. IPC-2221 B2's 0.6 mm for 101-150 V uncoated plus 0.1 mm for etch tolerance. Between two HV nets the
+# class clearance (0.6 mm) applies; adjacent taps differ by ~18 V, the ladder ends by the full bus.
 DRU = """(version 1)
-(rule "HV full bus: BUS_P side to bus-negative side"
-  (condition "(A.NetName == 'BUS_P*' || A.NetName == 'DIV_TOP*') && B.NetClass == 'HVLOW'")
+(rule "HV to bus-negative side"
+  (condition "A.NetClass == 'HV' && B.NetClass == 'HVLOW'")
   (constraint clearance (min 0.7mm)))
 """
 open(sys.argv[1] + ".kicad_dru", "w").write(DRU)

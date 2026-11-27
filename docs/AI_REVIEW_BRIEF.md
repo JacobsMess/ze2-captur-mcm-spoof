@@ -14,7 +14,9 @@ board sits between the MCM and the new pack and makes the MCM believe it still h
 - **Stage 2 (later):** 68S, about 260 V, MCM removed, ZombieVerter VCU + Toyota inverter. The board is then
   only a CAN gateway; its HV side is not used.
 
-Status: v0.9 (v0.8 circuit, re-routed with KiCadRoutingTools), designed, simulated, not built. Two AI reviews have been folded in already (v0.6 and v0.7 in the git log). The designer is not an electronics engineer. The design was
+Status: v0.10, designed, simulated, not built. Three AI reviews have been folded in already (v0.6, v0.7 and
+v0.10 in the git log). Routing is by KiCadRoutingTools (`hw/krt_route.py`). Bench and vehicle checks still to
+do are listed in `docs/BRINGUP.md`. The designer is not an electronics engineer. The design was
 produced with an AI assistant, so assume nothing has been checked by a human expert.
 
 ## The board
@@ -29,11 +31,12 @@ ESP32-S3-WROOM-1 module, 4-layer, 120 x 98 mm, parts on top, made and assembled 
 | Bypass relay | K4 (DPDT) joins the two IMA halves whenever the board is unpowered or not ready | Omron G6K-2F-Y |
 | Switched terminations | 120 ohm at the board end of each split half, only while K4 is energised, each behind a solder jumper (open by default) | K4 spare contacts, AQY212GS photoMOS |
 | CAN4 | Dash bus tap, listen only in stage 1 | MCP2518FD + TJA1051 |
-| Cell taps | A 16-resistor divider across the real pack bus gives the MCM nine balanced "block" voltages. Two optoMOS connect it; unpowered = taps float = MCM faults safely | 10k 0.1 %, AQV214EH x2 |
-| Bus sense | Isolated measurement of the pack bus voltage for precharge and weld checks | AMC3311 (isolated amplifier with its own isolated supply) |
+| Cell taps | A 16-resistor divider across the real pack bus gives the MCM nine balanced "block" voltages. Two optoMOS connect it, each end through 330 ohm and a 50 mA 250 V DC fuse; unpowered = taps float = MCM faults safely | 10k 0.1 %, AQV214EH x2, Littelfuse 0242.050UR x2 |
+| Bus sense | Isolated measurement of the pack bus voltage for weld, precharge and closure checks; 10k 1 W ends hold any divider short within rating | AMC3311 (isolated amplifier with its own isolated supply) |
 | Analog island | Fakes the three NTC temperature inputs and adds a small offset to the Hall current-sensor signal (steers the MCM's own SOC count). Runs from the MCM's 5 V sensor supply, I2C-isolated from the rest | MCP4728 DAC, MCP6004, ADS1115 x2, ISO1540 |
 | Contactor drive | Drives the Captur pack's precharge and main contactors and its BMS 12 V feed | VND7050AJ high-side x2 (one channel spare); low-side master FET driven by an enable latch through a 5 V gate buffer |
-| Watchdog latch | Each watchdog kick (WDI edge) clocks MCU_EN into a D flip-flop whose Q drives the master FET. A watchdog timeout clears the flip-flop; firmware that notices its own stall on resume latches a fault before the next kick, so coils never come back on their own. An RC gives a power-on clear | TPS3431, SN74LVC1G74, SN74LV1T34 |
+| Watchdog latch | Each watchdog kick (WDI rising edge) clocks MCU_EN into a D flip-flop whose Q drives the master FET. A watchdog timeout clears the flip-flop; firmware that notices its own stall on resume latches a fault before the next kick, so coils never come back on their own. An RC gives a power-on clear, squared by a Schmitt buffer for CLR | TPS3431, SN74LVC1G74, SN74LVC1G17, SN74LV1T34 |
+| Pump readback | The pump line drives a threshold FET's gate; the FET pulls a 3.3 V GPIO low. The GPIO never sees the 12-16 V line | 2N7002 |
 
 HV strip: right-hand edge, 150 V maximum, separated by a 5.6 mm copper-free band. Only three isolation
 parts cross it (K2, K3, U12), with a short slot under each.
@@ -53,10 +56,14 @@ parts cross it (K2, K3, U12), with a short slot under each.
 
 - **Key on:** read by the ADC on the board supply, with hysteresis and dwell (a crank dip is not a key-off).
   The board then closes the Captur contactors before the MCM looks at the pack: link must be dead with both
-  coils off (weld check), precharge, main+ with precharge held through pickup, verify. Then it connects the taps. CAN2-4 start in
-  listen-only.
-- **Faults:** a contactor, weld, bus-sense or stall fault is latched until key-off and is a hard trip (taps
-  float, contactors open). A soft trip never starts a close. The BMS cell sum must agree with 68 x the
+  coils off (weld check), precharge, main+ with precharge held through pickup, then precharge off and verify:
+  the link must reach 92 % and not decay over 300 ms (an open main+ over a charged link reads ~100 % too). Only
+  then, with the analog island answering, does it connect the taps. CAN2-4 start in listen-only; K4 splits the
+  IMA bus only when enabled and after both controllers confirm normal mode.
+- **Faults:** a contactor, weld, bus-sense, ignition-sense or stall fault is latched until key-off and is a hard
+  trip (taps float, contactors open). A soft trip never starts a close and aborts one in progress; a precharge
+  deadline is checked before success; a link reading above the pack is a fault. A reset while running
+  (brownout, watchdog, panic) starts tripped until the next power cycle. The BMS cell sum must agree with 68 x the
   extreme cells; the precharge target is the sum scaled to the series string.
 - **Running:** taps follow the real pack; temperatures and SOC offset come from the Captur BMS over CAN1;
   IMA frames are forwarded (and can be modified) between CAN2 and CAN3.
@@ -68,10 +75,15 @@ parts cross it (K2, K3, U12), with a short slot under each.
 ## Known open items
 
 - Pinouts taken from datasheets but not yet checked by a person: VND7050AJ (custom PowerSSO-16 footprint),
-  TPS3431, SN74LVC1G74, SN74LV1T34, AMC3311, K4 contact map, AQY212GS, H24VNT2B.
-- Not stocked at JLC (hand fit): AQV214EH x2, TPS3431, and the five THT connectors. AMC3311 stock is low.
-- Full-bus gaps (BUS_P side to the bus-negative side) are held to 0.7 mm by a DRC rule; IPC-2221 B2 asks
-  0.6 mm uncoated at 101-150 V. Conformal coating planned.
+  TPS3431, SN74LVC1G74, SN74LVC1G17, SN74LV1T34, AMC3311, K4 contact map, AQY212GS, H24VNT2B. Land patterns
+  drawn from datasheets: AQV214EHA (8.3 mm rows), Littelfuse 242 fuse.
+- Not stocked at JLC: AQV214EH x2 (global sourcing). TPS3431SQDRBRQ1 and AMC3311 stock is low. The five THT
+  connectors are in the CPL for JLC's THT assembly.
+- Every HV-class net is held 0.7 mm from the bus-negative side by a DRC rule; IPC-2221 B2 asks 0.6 mm uncoated
+  at 101-150 V. Conformal coating planned; creepage on the assembled unit still to verify.
+- The open-main+ check relies on the link decaying through its bleed with precharge off: valid if the bleed time
+  constant is under ~4 s, measured on the bench before relying on it (`docs/BRINGUP.md`).
+- Residual: a halted (not hung) CPU keeps K4 energised; the task watchdog covers software hangs only.
 - Coils measured (< 0.8 A total). Pump not chosen: on/off, PWM or 3-wire signal by NVS setting, < 3 A,
   with line readback for open circuit and Q3 failure.
 - The Captur BMS protocol is decoded (0x0F5 keep-alive, UDS reads; see `firmware/main/captur.h`); its current
@@ -84,7 +96,8 @@ parts cross it (K2, K3, U12), with a short slot under each.
   IMA bus load and terminations. These get measured before anything is connected.
 - The bus-sense divider uses 1 % parts; the close check (92 %) allows for it untrimmed.
 - Firmware has only run in simulation (ESP32-S3 QEMU with modelled CAN controllers): no frames lost at
-  realistic loads, CAN core 22-70 %; at the edge with every bus saturated on the slow CPU model.
+  realistic loads, CAN core 23-70 %; at the edge with every bus saturated on the slow CPU model. The safety
+  chain also runs on the host against a board model (`tests/host/`, 23 scenarios).
 
 ## What to review
 

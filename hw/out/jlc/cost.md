@@ -7,11 +7,11 @@ assembly only; fit it by hand to keep the order on Economic assembly.
 
 | Item | USD |
 |---|---|
-| Parts, one board (all lines) | 48.01 |
-| Loading fees, Economic: 23 Extended SMT types x $3.07 | 71 |
-| Loading fees, Standard: 52 Basic + Extended SMT types x $1.53 | 80 |
-| THT connectors, 5 types (fit by hand) | - |
+| Parts, one board (all lines) | 52.65 |
+| Loading fees, Economic: 27 Extended SMT types x $3.07 | 83 |
+| Loading fees, Standard: 54 Basic + Extended SMT types x $1.53 | 83 |
+| THT connectors, 5 types (JLC THT assembly: in bom.csv and cpl.csv, quote it) | - |
 
-BOM lines by class: B 31, E 28, G 2, P 8 (B basic, P preferred, E extended, G not at JLC)
+BOM lines by class: B 29, E 32, G 1, P 8 (B basic, P preferred, E extended, G not at JLC)
 
-Not stocked at JLC: AQV214EHAX (~$6), TPS3431SDRBRQ1 (~$2). JLC global sourcing can buy them, or fit by hand.
+Not stocked at JLC: AQV214EHAX (~$6). JLC global sourcing can buy them, or fit by hand.

@@ -33,8 +33,12 @@ SUBST = {
     "Package_SO.3dshapes/SOP-4_3.8x4.1mm_P2.54mm.wrl": ("Package_SO.3dshapes/SOP-4_4.4x2.6mm_P1.27mm.wrl", "all", None),
     "Package_TO_SOT_SMD.3dshapes/SOT-353_SC-70-5.wrl": ("Package_TO_SOT_SMD.3dshapes/SOT-23-5.wrl", "all", 0.9),
     "ze2/ST_PowerSSO-16": ("Package_SO.3dshapes/TSSOP-16-1EP_4.4x5mm_Pitch0.65mm_EP3.4x5mm.wrl", "body", None),
+    "ze2/PhotoMOS_DIP6_SMD": ("Package_DIP.3dshapes/SMDIP-6_W7.62mm.wrl", None, None),
+    "ze2/Fuse_242": ("Resistor_SMD.3dshapes/R_2512_6332Metric.wrl", "body", 3.0),
 }
-FP_MODEL = {"ST_PowerSSO-16_3.9x4.9mm_P0.5mm_EP2.2x3.9mm": "ze2/ST_PowerSSO-16"}  # custom footprints with no model
+FP_MODEL = {"ST_PowerSSO-16_3.9x4.9mm_P0.5mm_EP2.2x3.9mm": "ze2/ST_PowerSSO-16",  # custom footprints with no model
+            "Panasonic_PhotoMOS_DIP6_SMD_W8.3mm": "ze2/PhotoMOS_DIP6_SMD",
+            "Fuse_Littelfuse_242_SMD_L8.4mm_D3.0mm": "ze2/Fuse_242"}
 BLACK, NYLON, METAL, TAN, DGREY = (0.09, 0.09, 0.10), (0.92, 0.89, 0.80), (0.78, 0.78, 0.80), (0.80, 0.68, 0.45), (0.22, 0.22, 0.24)
 # procedural bodies: name fragment -> (height mm, colour, style)
 PROC = {  # no Micro-Fit / Mini-Fit vertical headers in the KiCad 7 library: built from the real dimensions

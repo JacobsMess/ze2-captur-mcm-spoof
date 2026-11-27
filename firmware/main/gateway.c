@@ -66,17 +66,25 @@ void gateway_decode(const can_frame_t *f, uint32_t now_ms)
     }
 }
 
-static void enter(gw_state_t st)
+static const char *name(gw_state_t st)
+{
+    return st == GW_SPLIT ? "SPLIT" : st == GW_BYPASS ? "BYPASS" : st == GW_ARMING ? "ARMING" : "FAILED";
+}
+
+static uint32_t s_armed_ms;
+
+static void enter(gw_state_t st, uint32_t now_ms)
 {
     if (st == s_state) return;
-    ESP_LOGW(TAG, "%s -> %s", s_state == GW_SPLIT ? "SPLIT" : s_state == GW_BYPASS ? "BYPASS" : "FAILED",
-             st == GW_SPLIT ? "SPLIT" : st == GW_BYPASS ? "BYPASS" : "FAILED");
-    if (st == GW_SPLIT) {
+    ESP_LOGW(TAG, "%s -> %s", name(s_state), name(st));
+    if (st == GW_ARMING) {
         // talk on both halves first, then split: the MCM and PCM lose each other for only the relay's
         // switching time (~3 ms) and the board is already forwarding when they reappear
         mcp_request_listen_only(0, false);
         mcp_request_listen_only(1, false);
         can_io_kick();
+        s_armed_ms = now_ms;
+    } else if (st == GW_SPLIT) {
         hal_out(OUT_RELAY_SPLIT, true);
     } else {
         hal_out(OUT_RELAY_SPLIT, false);
@@ -93,20 +101,33 @@ static int32_t age(uint32_t now_ms, int bus) { return (int32_t)(now_ms - s_last_
 void gateway_tick(uint32_t now_ms, bool allow_split)
 {
     if (!can_io_ready(0) || !can_io_ready(1)) {
-        enter(GW_FAILED);
+        enter(GW_FAILED, now_ms);
         return;
     }
     switch (s_state) {
     case GW_BYPASS:
         // only split once traffic has been seen on the joined bus recently (car awake)
-        if (allow_split && age(now_ms, BUS_MCM) < 100) enter(GW_SPLIT);
+        if (allow_split && age(now_ms, BUS_MCM) < 100) enter(GW_ARMING, now_ms);
+        break;
+    case GW_ARMING:
+        if (!allow_split) {
+            enter(GW_BYPASS, now_ms);
+        } else if (mcp_mode(0) == 0 && mcp_mode(1) == 0) {
+            enter(GW_SPLIT, now_ms);
+        } else if (now_ms - s_armed_ms > GW_ARM_MS) {
+            ESP_LOGE(TAG, "controllers did not confirm normal mode: bypass, latched until key-off");
+            enter(GW_FAILED, now_ms);
+        }
         break;
     case GW_SPLIT:
         if (!allow_split) {
-            enter(GW_BYPASS);
+            enter(GW_BYPASS, now_ms);
+        } else if (mcp_mode(0) != 0 || mcp_mode(1) != 0) {
+            ESP_LOGE(TAG, "controller left normal mode while split: bypass, latched until key-off");
+            enter(GW_FAILED, now_ms);
         } else if (age(now_ms, BUS_MCM) > BUS_SILENT_MS || age(now_ms, BUS_PCM) > BUS_SILENT_MS) {
             ESP_LOGE(TAG, "IMA half silent while split: bypass, latched until key-off");
-            enter(GW_FAILED);
+            enter(GW_FAILED, now_ms);
         }
         break;
     case GW_FAILED:

@@ -7,6 +7,8 @@
 #include "contactors.h"
 #include "control.h"
 #include "esp_log.h"
+#include "esp_system.h"
+#include "esp_task_wdt.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -54,7 +56,11 @@ static void control_task(void *arg)
 {
     cfg_t cfg = *(cfg_t *)arg;
     TickType_t wake = xTaskGetTickCount();
+    // a hung control loop panics and resets the chip: GPIOs float, so K4 drops to bypass (R79) and the coils
+    // were already dropped by U10 at the TPS3431 timeout; the reset reason then latches a trip (app_main)
+    esp_task_wdt_add(NULL);
     for (;;) {
+        esp_task_wdt_reset();
         int64_t now_us = esp_timer_get_time();
         uint32_t now = (uint32_t)(now_us / 1000);
         contactors_kick_watchdog(now);   // first: a stall is caught before anything can re-arm the latch
@@ -86,6 +92,16 @@ void app_main(void)
     }
     static cfg_t cfg;
     cfg = load_cfg();
+    // a reset while running loses the RAM trip latch: start tripped and stay so until a real key-off
+    esp_reset_reason_t rr = esp_reset_reason();
+    const char *why = rr == ESP_RST_BROWNOUT ? "reset while running: brownout"
+                      : rr == ESP_RST_PANIC ? "reset while running: panic"
+                      : (rr == ESP_RST_INT_WDT || rr == ESP_RST_TASK_WDT || rr == ESP_RST_WDT)
+                          ? "reset while running: watchdog" : NULL;
+    if (why) {
+        ESP_LOGE(TAG, "%s: contactors stay open until key-off", why);
+        safety_boot_latch(why);
+    }
     ESP_LOGI(TAG, "stage %d, IMA man-in-the-middle %s%s", cfg.stage, cfg.mitm ? "enabled" : "disabled",
              ZE2_SIM ? " [SIMULATION BUILD]" : "");
     board_hal_init();                   // all outputs off, K4 relaxed: car runs as if the board weren't there

@@ -68,7 +68,7 @@ r.check_returncode()
 subprocess.run(["kicad-cli", "pcb", "export", "drill", "--format", "excellon", "--excellon-separate-th",
                 "--generate-map", "--map-format", "gerberx2", "-o", os.path.join(OUTDIR, "gerbers/"), OUT], check=True)
 subprocess.run(["kicad-cli", "pcb", "export", "pos", "--format", "csv", "--units", "mm", "--side", "both",
-                "--smd-only", "-o", os.path.join(OUTDIR, "pos_raw.csv"), OUT], check=True)
+                "-o", os.path.join(OUTDIR, "pos_raw.csv"), OUT], check=True)
 
 with zipfile.ZipFile(os.path.join(OUTDIR, "gerbers.zip"), "w", zipfile.ZIP_DEFLATED) as zf:
     for f in sorted(os.listdir(os.path.join(OUTDIR, "gerbers"))):
@@ -118,19 +118,30 @@ with open(os.path.join(OUTDIR, "cost.md"), "w") as fh:
              f"| Parts, one board (all lines) | {cost['parts']:.2f} |\n"
              f"| Loading fees, Economic: {n_ext} Extended SMT types x ${econ} | {n_ext * econ:.0f} |\n"
              f"| Loading fees, Standard: {n_ext + n_b} Basic + Extended SMT types x ${std} | {(n_ext + n_b) * std:.0f} |\n"
-             f"| THT connectors, {len(cost['ext_tht'])} types (fit by hand) | - |\n\n"
+             f"| THT connectors, {len(cost['ext_tht'])} types (JLC THT assembly: in bom.csv and cpl.csv, quote it) | - |\n\n"
              f"BOM lines by class: " + ", ".join(f"{k} {v}" for k, v in sorted(cost['cls'].items())) +
              " (B basic, P preferred, E extended, G not at JLC)\n\n"
              f"Not stocked at JLC: {', '.join(cost['glob'])}. JLC global sourcing can buy them, or fit by hand.\n")
 print(open(os.path.join(OUTDIR, "cost.md")).read())
 
-# CPL (JLCPCB format)
+# CPL (JLCPCB format): every BOM line, SMT and THT. KiCad places a THT connector's origin on pin 1; JLC wants the
+# part centre, so those rows use the courtyard centre (KiCad Y down -> CPL Y up, as the pos export does). Check the
+# connectors' mating direction and pin 1 in JLC's placement preview before ordering.
+pb = pcbnew.LoadBoard(OUT)
+in_bom = {r for g in groups.values() for r in g["refs"]}
 with open(os.path.join(OUTDIR, "pos_raw.csv")) as fh, open(os.path.join(OUTDIR, "cpl.csv"), "w", newline="") as out:
     rd = csv.DictReader(fh)
     w = csv.writer(out)
     w.writerow(["Designator", "Mid X", "Mid Y", "Layer", "Rotation"])
     for row in rd:
-        w.writerow([row["Ref"], f"{float(row['PosX']):.3f}mm", f"{float(row['PosY']):.3f}mm",
-                    "Top" if row["Side"] == "top" else "Bottom", row["Rot"]])
+        if row["Ref"] not in in_bom:
+            continue   # mounting holes, solder jumpers
+        x, y = float(row["PosX"]), float(row["PosY"])
+        fp = pb.FindFootprintByReference(row["Ref"])
+        if fp.GetAttributes() & pcbnew.FP_THROUGH_HOLE:
+            c = fp.GetCourtyard(pcbnew.F_CrtYd if fp.GetLayer() == pcbnew.F_Cu else pcbnew.B_CrtYd).BBox().Centre()
+            x += pcbnew.ToMM(c.x - fp.GetPosition().x)
+            y -= pcbnew.ToMM(c.y - fp.GetPosition().y)
+        w.writerow([row["Ref"], f"{x:.3f}mm", f"{y:.3f}mm", "Top" if row["Side"] == "top" else "Bottom", row["Rot"]])
 os.remove(os.path.join(OUTDIR, "pos_raw.csv"))
 print("fab outputs written")

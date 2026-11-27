@@ -1,4 +1,7 @@
 """Circuit intent, checked against hw/parts.json (the netlist the board is built from)."""
+import pcbnew
+
+from conftest import ROOT
 
 
 def net(parts, ref, pin):
@@ -67,14 +70,20 @@ def test_split_terminations_within_iso11898(parts):
 def test_watchdog_pinout_and_latch(parts):
     # TPS3431 DRB: 1 VDD, 2 CWD (open = 1.6 s), 3 EN, 4 GND, 5 SET1, 6 WDI, 7 WDO, 8 ENOUT
     u11 = parts["U11"]["nets"]
-    assert (u11["6"], u11["7"], u11["5"], u11["3"]) == ("WDI", "WDT_OK", "+3V3", "+3V3")
+    assert (u11["1"], u11["6"], u11["7"], u11["5"]) == ("+3V3", "WDI", "WDT_OK", "+3V3"), "SET1 high: watchdog on"
+    assert u11["3"].startswith("NC_"), "EN floats on its internal pull-up"
     assert u11["2"].startswith("NC_"), "CWD left open: factory 1.6 s timeout"
     # SN74LVC1G74: WDI edges clock MCU_EN in; the watchdog output clears it and it stays clear
     u10 = parts["U10"]["nets"]
     assert (u10["1"], u10["2"], u10["5"], u10["6"], u10["7"], u10["8"]) == \
-        ("WDI", "MCU_EN", "MASTER_EN", "WDT_OK", "+3V3", "+3V3")
+        ("WDI", "MCU_EN", "MASTER_EN", "WDT_CLR", "+3V3", "+3V3")
     assert {net(parts, "R16", 1), net(parts, "R16", 2)} == {"Q2_DRV", "Q2_G"}
     assert {net(parts, "C27", 1), net(parts, "C27", 2)} == {"WDT_OK", "GND"}, "power-on clear of the latch"
+    # the slow R19/C27 edge reaches CLR through a Schmitt buffer (SC-70: 1 NC, 2 A, 3 GND, 4 Y, 5 VCC)
+    u25 = parts["U25"]
+    assert u25["mpn"].startswith("SN74LVC1G17")
+    assert (u25["nets"]["2"], u25["nets"]["3"], u25["nets"]["4"], u25["nets"]["5"]) == ("WDT_OK", "GND", "WDT_CLR", "+3V3")
+    assert parts["U11"]["mpn"] == "TPS3431SQDRBRQ1", "TI's orderable -Q1 number"
 
 
 def test_high_side_drivers_inputs_on_input_pins(parts):
@@ -115,12 +124,42 @@ def test_low_side_fets_get_5v_gate_drive(parts):
 
 
 def test_pump_line_readback(parts):
-    # PUMP_N / 3.55 to GPIO35: a 9 V line still reads high (VIH 2.475 V), 16 V stays under 4.6 V
-    assert {net(parts, "R102", 1), net(parts, "R102", 2)} == {"PUMP_N", "PUMP_SENSE"}
-    assert {net(parts, "R103", 1), net(parts, "R103", 2)} == {"PUMP_SENSE", "GND"}
+    # the 12-16 V pump line never reaches the GPIO: it drives Q26's gate through R102/R103, Q26 pulls PUMP_SENSE
+    # (10k to 3.3 V) low. On at 7.5 V even with the 2N7002's 2.5 V worst-case threshold; 40 V keeps VGS < 20 V.
+    assert {net(parts, "R102", 1), net(parts, "R102", 2)} == {"PUMP_N", "PUMP_G"}
+    assert {net(parts, "R103", 1), net(parts, "R103", 2)} == {"PUMP_G", "GND"}
+    assert parts["Q26"]["mpn"] == "2N7002" and parts["Q26"]["nets"] == {"1": "PUMP_G", "2": "GND", "3": "PUMP_SENSE"}
+    assert {net(parts, "R104", 1), net(parts, "R104", 2)} == {"+3V3", "PUMP_SENSE"}
+    assert "PUMP_N" not in parts["U4"]["nets"].values() and parts["U4"]["nets"]["28"] == "PUMP_SENSE"
     k = lambda r: float(parts[r]["val"].rstrip("k")) * 1000
     ratio = k("R103") / (k("R102") + k("R103"))
-    assert 9.0 * ratio > 2.475 and 16.0 * ratio < 4.6
+    assert 7.5 * ratio >= 2.5 and 40.0 * ratio < 20.0
+
+
+def test_photomos_on_maker_land_pattern(parts):
+    # Panasonic AQV214EHA: six 1.5 x 1.9 mm lands on 8.3 mm rows; pin 5 (MOSFET midpoint) present, own HV-class net
+    for ref in ("K2", "K3"):
+        assert parts[ref]["fp"][1] == "Panasonic_PhotoMOS_DIP6_SMD_W8.3mm"
+        assert parts[ref]["nets"]["5"] == f"{ref}_P5"
+    fp = pcbnew.FootprintLoad(str(ROOT / "hw" / "lib" / "ze2.pretty"), "Panasonic_PhotoMOS_DIP6_SMD_W8.3mm")
+    pads = {p.GetNumber(): p for p in fp.Pads()}
+    assert sorted(pads) == list("123456")
+    assert abs(pcbnew.ToMM(pads["5"].GetPosition().x - pads["2"].GetPosition().x) - 8.3) < 1e-3
+    assert [round(pcbnew.ToMM(v), 2) for v in (pads["1"].GetSize().x, pads["1"].GetSize().y)] == [1.9, 1.5]
+
+
+def test_hv_feeds_fault_protected(parts):
+    # tap ladder: a DC-rated fuse in series with each end resistor; even a tap-to-tap harness short draws > 4x its
+    # rating. Bus sense: the 10k ends keep any short in the divider within each resistor's 1 W.
+    assert parts["F3"]["nets"] == {"1": "BUS_P", "2": "BUS_P_FS"} and parts["F4"]["nets"] == {"1": "BUS_N_FS", "2": "BUS_N"}
+    assert all(parts[f]["mpn"] == "Littelfuse 0242.050UR" for f in ("F3", "F4"))
+    assert {net(parts, "RF1", 1), net(parts, "RF1", 2)} == {"BUS_P_FS", "DIV_TOP_IN"}
+    assert {net(parts, "RF2", 1), net(parts, "RF2", 2)} == {"DIV_BOT_IN", "BUS_N_FS"}
+    r = lambda ref: float(parts[ref]["val"].split()[0].rstrip("k")) * (1000 if "k" in parts[ref]["val"].split()[0] else 1)
+    assert 150.0 / (r("RF1") + r("RF2") + 2 * 11.3) > 4 * 0.050
+    for ref in ("RF3", "RF4"):
+        assert 150.0 ** 2 / (2 * r(ref)) <= 1.0 * 1.15 and 150.0 ** 2 / (r(ref) + 400e3) < 1.0
+    assert not any("fusible" in p["val"] or "fusible" in p["mpn"] for p in parts.values())
 
 
 def test_tap_ladder_is_low_impedance(parts):

@@ -316,6 +316,14 @@
         "pattern": "SNS*"
       },
       {
+        "netclass": "HV",
+        "pattern": "K2_P5"
+      },
+      {
+        "netclass": "HV",
+        "pattern": "K3_P5"
+      },
+      {
         "netclass": "HVLOW",
         "pattern": "BUS_N*"
       },
