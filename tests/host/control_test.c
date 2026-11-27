@@ -4,7 +4,8 @@
 //   - Captur contactors (main+, precharge in parallel with it, negative hard-wired) with optional welds;
 //   - the U10/U11 enable latch: a WDI rising edge clocks MCU_EN into U10; U11 counts falling edges, and 1.36 s
 //     without one clears U10;
-//   - the AMC3311 sense (valid or not) and the board supply (and whether its ADC read works).
+//   - the AMC3311 sense (valid or not) and the board supply (and whether its ADC read works);
+//   - U8 MultiSense precharge-coil current: open or shorted coil, or a high side stuck on, on request.
 // One scenario per process (the firmware keeps static state): ./control_test <scenario>; exit 0 = pass.
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,7 +21,7 @@
 
 // ------------------------------------------------------------------ board and pack model
 static bool out[OUT_COUNT];
-static bool weld_pos, weld_pre, main_open, sense_ok = true, vbat_ok = true, latch_q;
+static bool weld_pos, weld_pre, main_open, pre_coil_open, pre_coil_short, pre_stuck_on, sense_ok = true, vbat_ok = true, latch_q;
 static int pre_div = 15;   // precharge: link closes 1/pre_div of the gap per 10 ms
 static int32_t pack_mv = 125630, link_mv, link_forced = -1, vbat_mv = 13800;   // 34S2P: 34 x 3.695 V
 static uint32_t now = 1000, last_kick;
@@ -88,10 +89,17 @@ bool can_send(bus_id_t bus, const can_frame_t *f)
 
 static bool coil(hal_out_t o) { return out[o] && latch_q; }   // a coil needs its high side and the master FET
 
+bool hal_precharge_coil_ma(int32_t *ma)
+{
+    bool on = (out[OUT_HS_PRE] || pre_stuck_on) && latch_q && !pre_coil_open;
+    *ma = !on ? 0 : pre_coil_short ? 4000 : 214;   // shorted: the VND7050 limits and drives VSENSEH
+    return true;
+}
+
 static void model_step(void)
 {
     if (now - last_kick >= 1360) latch_q = false;   // TPS3431 minimum timeout clears U10
-    bool pos = (coil(OUT_HS_MAINP) && !main_open) || weld_pos, pre = coil(OUT_HS_PRE) || weld_pre;   // neg. wired
+    bool pos = (coil(OUT_HS_MAINP) && !main_open) || weld_pos, pre = ((coil(OUT_HS_PRE) || (pre_stuck_on && latch_q)) && !pre_coil_open) || weld_pre;   // neg. wired
     if (pos) link_mv = pack_mv;
     else if (pre) link_mv += (pack_mv - link_mv) / pre_div;   // tau ~150 ms at 10 ms steps by default
     else link_mv -= link_mv / 500;                            // bleed, tau ~5 s
@@ -382,6 +390,35 @@ static void clock_wrap(void)
     normal_close();
 }
 
+static void precharge_coil_open(void)
+{
+    pre_coil_open = true;     // coil, its harness or its connector open: no current, link never charges
+    bool main_cmd = false;
+    uint32_t t0 = now;
+    for (int i = 0; i < 100 && !contactors_faulted(); i++) { step(); main_cmd |= out[OUT_HS_MAINP]; }
+    CHECK(contactors_faulted() && strstr(contactors_fault(), "precharge coil current low"), "named as a coil fault");
+    CHECK(now - t0 < 300 && !main_cmd && !any_coil(), "well before the precharge deadline, main+ never commanded");
+}
+
+static void precharge_coil_shorted(void)
+{
+    pre_coil_short = true;
+    for (int i = 0; i < 100 && !contactors_faulted(); i++) step();
+    CHECK(contactors_faulted() && strstr(contactors_fault(), "precharge coil current high"), "shorted coil: fault");
+    CHECK(!any_coil() && !out[OUT_HS_MAINP], "everything open, main+ never commanded");
+}
+
+static void precharge_stuck_on(void)
+{
+    normal_close();
+    run(100);
+    CHECK(contactors_state() == CT_CLOSED && contactors_coil_ma() == 0, "closed: precharge reads off");
+    pre_stuck_on = true;      // precharge high side fails short while closed
+    run(100);
+    CHECK(contactors_faulted() && strstr(contactors_fault(), "commanded off"), "stuck-on driver: fault");
+    CHECK(!out[OUT_HS_MAINP] && !latch_q, "main+ dropped and the master FET opened, so the stuck coil is off");
+}
+
 static const struct { const char *name; void (*fn)(void); } SCEN[] = {
     {"normal_close", normal_close}, {"only_cells", only_cells}, {"stale_groups_stage2", stale_groups_stage2},
     {"live_link_while_open", live_link_while_open}, {"soft_trip_before_start", soft_trip_before_start},
@@ -394,6 +431,8 @@ static const struct { const char *name; void (*fn)(void); } SCEN[] = {
     {"soft_trip_during_precharge", soft_trip_during_precharge}, {"link_reads_high", link_reads_high},
     {"late_precharge", late_precharge}, {"ignition_sense_lost", ignition_sense_lost}, {"reset_latch", reset_latch},
     {"taps_need_island", taps_need_island}, {"clock_wrap", clock_wrap},
+    {"precharge_coil_open", precharge_coil_open}, {"precharge_coil_shorted", precharge_coil_shorted},
+    {"precharge_stuck_on", precharge_stuck_on},
 };
 
 int main(int argc, char **argv)

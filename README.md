@@ -10,9 +10,10 @@ inverter.
   <img src="docs/img/board_3d.png" width="80%" alt="The populated board, ray-traced render">
 </p>
 
-> **Status: untested design, v0.10.** No boards have been made. v0.6, v0.7 and v0.10 fold in three design reviews;
+> **Status: untested design, v0.11.** No boards have been made. v0.6, v0.7 and v0.10 fold in three design reviews;
 > v0.8 lets the board measure or cope with the remaining unknowns itself; v0.9 moved the routing to
-> [KiCadRoutingTools](https://github.com/drandyhaas/KiCadRoutingTools). Bring-up and vehicle checks are in
+> [KiCadRoutingTools](https://github.com/drandyhaas/KiCadRoutingTools); v0.11 applies the VND7050AJ, Littelfuse 242,
+> TPS3431 and ESP32-S3 datasheets (precharge-coil current sense, 100 ohm tap-ladder ends, fuse land pattern). Bring-up and vehicle checks are in
 > [docs/BRINGUP.md](docs/BRINGUP.md). Several parts are placeholders (listed
 > [below](#before-ordering)). The BOM carries LCSC numbers, Basic or Preferred wherever JLC has one. The design was
 > produced with an AI assistant from my brief and is up for review ([feedback](#feedback) welcome).
@@ -35,7 +36,7 @@ inverter.
 
 <p align="center"><img src="docs/img/architecture.png" width="100%" alt="Stage 1 architecture"></p>
 
-- **Cell taps:** a resistor divider fed from the real pack bus (through a 250 V DC fuse and 330 ohm at
+- **Cell taps:** a resistor divider fed from the real pack bus (through a 250 V DC fuse and 100 ohm at
   each end, switched by two optoMOS) gives the MCM nine balanced taps. The taps are switched on only once
   the contactors are verified closed and the analog island is answering. If the board loses power the
   optoMOS open, the taps float and the MCM sets the IMA light and stops using the pack.
@@ -68,7 +69,8 @@ inverter.
   both coils off the link (watched by the AMC3311) must be dead, which rules out a weld. Then precharge,
   then main+ with precharge still held until it has picked up, then precharge off for 300 ms: the link
   must hold at the pack voltage. A charged link reads ~100 % with main+ open too, so the check is that it
-  doesn't decay (calibrated on the bench, [BRINGUP](docs/BRINGUP.md)). The close aborts, latched, on a
+  doesn't decay (calibrated on the bench, [BRINGUP](docs/BRINGUP.md)). The precharge driver's current sense
+  must show coil current while precharging and none once closed. The close aborts, latched, on a
   precharge deadline, a link reading above the pack, or a soft trip before it finishes. A soft trip keeps a
   closed pack closed but never starts a close.
 - **Captur BMS:** kept awake by the 0x0F5 frame every 20 ms (counter + CRC-8) and read with UDS (29-bit,

@@ -22,7 +22,7 @@
 #define PIN_I2C_SCL      18  // pin 11 to the analog island through ISO1540
 #define PIN_I2C_SDA      8   // pin 12
 #define PIN_CAN3_INT     3   // pin 15 MCP2518FD U18 (PCM side of the IMA bus)
-#define PIN_SPI_CS3      9   // pin 17
+#define PIN_MS_ADC       9   // pin 17 U8 MultiSense, precharge coil (1k R100, 15k R105, 10n C52), ADC1 ch8
 #define PIN_IG_SENSE     10  // pin 18 board supply / 5.545 on ADC1 ch9 (ignition)
 #define PIN_SPI_MOSI     11  // pin 19
 #define PIN_SPI_SCK      12  // pin 20
@@ -32,6 +32,7 @@
 #define PIN_PUMP_PWM     47  // pin 24 coolant pump (U24 -> Q3)
 #define PIN_PUMP_SENSE   35  // pin 28 Q26 drain (10k pull-up): LOW while the pump line is above ~6 V
 #define PIN_SPI_CS4      48  // pin 25
+#define PIN_SPI_CS3      36  // pin 29
 #define PIN_CAN2_INT     38  // pin 31 MCP2518FD U6 (MCM side of the IMA bus)
 #define PIN_SPI_CS2      39  // pin 32
 #define PIN_OPTO_EN      41  // pin 34 tap-divider optoMOS K2/K3
@@ -79,6 +80,18 @@ typedef enum { BUS_EV = 0, BUS_MCM = 1, BUS_PCM = 2, BUS_DASH = 3, BUS_COUNT = 4
 // ~20 x CLOSE_VERIFY_MS / (CLOSE_DROOP_PM / 1000) = 4 s at these values; measure it (docs/BRINGUP.md) and
 // tune before relying on it. 0 disables the check.
 #define CLOSE_DROOP_PM     15         // per mille of pack voltage
+// Precharge-coil current (U8 MultiSense channel 0: SEn tied high, SEL0/SEL1 low). Reading = Iout x
+// COIL_SENSE_K_TYP / K, and K spreads 830-1935 at 0.2 A, so the window is wide: below the minimum the coil, its
+// harness, the VND supply or the COIL_RTN master FET is open; above it the coil is shorted (an overloaded channel
+// drives VSENSEH, 5-6.6 V, which clips the ADC at ~4 A equivalent). Limits cover 10-15 V and -40..+100 C coils.
+// With precharge off and the master FET on the output sits at ~0 V and MultiSense is Hi-Z: any reading above
+// COIL_OFF_MAX_MA means the high side is conducting while commanded off.
+#define COIL_SENSE_K_TYP   1400       // IOUT / ISENSE, K0 typical (0.2 A)
+#define COIL_SENSE_R       1000       // R100, ohm
+#define COIL_SETTLE_MS     50         // coil on this long before its current counts (L/R and tDSENSE2H)
+#define COIL_PRE_MIN_MA    60         // precharge coil: 0.21 A nominal (56 ohm, 12 V)
+#define COIL_PRE_MAX_MA    700
+#define COIL_OFF_MAX_MA    80         // ~57 mV at the ADC: clear of its zero error; check at bring-up
 #define LINK_MAX_PCT       108        // link above pack x this % + LINK_MAX_EXTRA_MV: sensor or BMS data wrong
 #define LINK_MAX_EXTRA_MV  4000
 #define BUS_COLLAPSE_PCT   70         // closed, link below this % of pack: fault

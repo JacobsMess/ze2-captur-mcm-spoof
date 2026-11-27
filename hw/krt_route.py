@@ -77,9 +77,30 @@ def _keepout(b):
     b.Add(ko)
 
 
-def _fp_key(f):
+def _geom(f):
     return (str(f.GetFPID().GetLibItemName()), f.GetPosition().x, f.GetPosition().y, round(f.GetOrientationDegrees(), 2),
-            f.GetLayer(), tuple(sorted((p.GetNumber(), p.GetNetname()) for p in f.Pads())))
+            f.GetLayer())
+
+
+def _fp_key(f):
+    return _geom(f) + (tuple(sorted((p.GetNumber(), p.GetNetname()) for p in f.Pads())),)
+
+
+def _changed_boxes(new_fp, old_fp, m):
+    """Areas whose old copper is dropped: the whole part if it moved or changed footprint, else just the pads
+    whose net changed (a big module with one re-assigned pin keeps the rest of its fan-out)."""
+    if old_fp is not None and _geom(old_fp) == _geom(new_fp):
+        onet = {p.GetNumber(): p.GetNetname() for p in old_fp.Pads()}
+        out = []
+        for p in new_fp.Pads():
+            if onet.get(p.GetNumber()) != p.GetNetname():
+                bb = p.GetBoundingBox()
+                bb.Inflate(m)
+                out.append(bb)
+        return out
+    bb = (new_fp or old_fp).GetBoundingBox(False, False)
+    bb.Inflate(m)
+    return [bb]
 
 
 def _pads_by_net(b):
@@ -110,15 +131,11 @@ def reuse(new_path, old_path):
     boxes = []
     for f in new.GetFootprints():
         if ofp.get(f.GetReference()) != _fp_key(f):
-            bb = f.GetBoundingBox(False, False)
-            bb.Inflate(m)
-            boxes.append(bb)
+            boxes += _changed_boxes(f, old.FindFootprintByReference(f.GetReference()), m)
     for f in old.GetFootprints():   # removed or moved parts: their old area too
         g = new.FindFootprintByReference(f.GetReference())
-        if g is None or _fp_key(g) != ofp[f.GetReference()]:
-            bb = f.GetBoundingBox(False, False)
-            bb.Inflate(m)
-            boxes.append(bb)
+        if g is None or _geom(g) != _geom(f):
+            boxes += _changed_boxes(f, None, m)
     npads, opads = _pads_by_net(new), _pads_by_net(old)
     todo = {n for n in npads if n and n not in PLANES and npads[n] != opads.get(n)} | _unconnected(old)
     cut = lambda t: any(t.GetBoundingBox().Intersects(x) for x in boxes)

@@ -514,8 +514,7 @@ for ref, rled in (("K2", "R52"), ("K3", "R53")):
     PARTS[rled]["pos"] = (x - 0.4, y)   # clear of the wider land pattern
     PARTS[ref]["nets"]["5"] = f"{ref}_P5"
 # Fault protection on the HV feeds. Tap ladder: a short downstream of RF1/RF2 (harness, opto, ladder) now opens a
-# 250 V DC-rated 50 mA fuse in milliseconds; RF1/RF2 drop to 330R so even a tap-to-tap harness short draws
-# >4x the fuse rating (150 V / 680R = 220 mA). Bus sense: RF3/RF4 up to 10k, so a short anywhere in the
+# 250 V DC-rated 50 mA fuse; RF1/RF2 set the fault current (v0.11: 100R, see there). Bus sense: RF3/RF4 up to 10k, so a short anywhere in the
 # 425k divider leaves each at <= 0.56 W of its 1 W: no fuse needed there.
 part("F3", ("ze2", "Fuse_Littelfuse_242_SMD_L8.4mm_D3.0mm"), "50mA 250V", "Littelfuse 0242.050UR",
      {"1": "BUS_P", "2": "BUS_P_FS"}, (104.0, 13.80), 0)
@@ -532,6 +531,23 @@ PARTS["C41"].update(fp=("Capacitor_SMD", "C_0603_1608Metric"), mpn="1n 0603 X7R"
 for p_ in PARTS.values():
     if p_["val"] == "100n" and p_["fp"] == C0805:
         p_.update(fp=("Capacitor_SMD", "C_0603_1608Metric"), mpn="100n 0603 X7R")
+
+# v0.11 (datasheets) --------------------------------------------------------------------------------------------
+# U8 MultiSense reads precharge-coil current (channel 0: SEn high via ST's 15k Rprot, SEL0/SEL1 low). Channel 0
+# only: SEL0 (pin 5) sits inside the pins 4-6 GND bar. It is enough for a self-test: precharge current proves
+# VND supply, coil, harness and the COIL_RTN master FET before main+ is commanded, and with precharge off (CLOSED)
+# a reading means its high side is stuck on. R100 is the 1k sense resistor; R105/C52 protect and filter the ADC
+# (VSENSEH reaches 6.6 V on a fault). SPI_CS3 moves to IO36 to free ADC1 ch8 (IO9). U9 diagnostics stay unused.
+PARTS["U8"]["fp"] = ("ze2", "ST_PowerSSO-16_3.9x4.9mm_P0.5mm_EP2.2x3.9mm_GND4-6")
+PARTS["U8"]["nets"]["3"] = "MS_SEN"
+PARTS["U4"]["nets"].update({"17": "MS_ADC", "29": "SPI_CS3"})
+r("R105", "15k", "MSENSE_U8", "MS_ADC", (23.2, 54.0), 0)
+c("C52", "10n", "MS_ADC", "GND", (22.4, 51.0), 90)
+r("R106", "15k", "+3V3", "MS_SEN", (17.8, 66.8), 0)
+# Tap-ladder ends: 100R so the smallest harness fault (tap-to-tap, 150 V) draws 150 / (2 x 100 + 2 x 11.3) =
+# 0.67 A = 13x the 50 mA rating, inside the 242's 1000 % curve (< 2 ms) rather than its 300 % one (up to 10 s)
+for ref in ("RF1", "RF2"):
+    PARTS[ref].update(val="100 1W", mpn="25121WF1000T4E 100R 1W 2512 1%")
 
 # ================================================================== build
 def mm(x, y):
@@ -609,7 +625,7 @@ def build(path):
         t.SetTextThickness(pcbnew.FromMM(size * 0.15))
         board.Add(t)
     silk("HV <=150V DANGER", 104.0, 96.0, 1.5)
-    silk("ZE2 LiB MCM SPOOF v0.10", 96.0, 91.5, 1.0)
+    silk("ZE2 LiB MCM SPOOF v0.11", 96.0, 91.5, 1.0)
     silk("ANALOG ISLAND", 66.0, 2.0, 1.0)
     rect(90.5, 1.0, 119.0, 97.0, layer=pcbnew.F_SilkS, width=0.25)
 

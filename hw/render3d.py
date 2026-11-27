@@ -36,7 +36,8 @@ SUBST = {
     "ze2/PhotoMOS_DIP6_SMD": ("Package_DIP.3dshapes/SMDIP-6_W7.62mm.wrl", None, None),
     "ze2/Fuse_242": ("Resistor_SMD.3dshapes/R_2512_6332Metric.wrl", "body", 3.0),
 }
-FP_MODEL = {"ST_PowerSSO-16_3.9x4.9mm_P0.5mm_EP2.2x3.9mm": "ze2/ST_PowerSSO-16",  # custom footprints with no model
+FP_MODEL = {"ST_PowerSSO-16_3.9x4.9mm_P0.5mm_EP2.2x3.9mm": "ze2/ST_PowerSSO-16",
+            "ST_PowerSSO-16_3.9x4.9mm_P0.5mm_EP2.2x3.9mm_GND4-6": "ze2/ST_PowerSSO-16",  # custom footprints with no model
             "Panasonic_PhotoMOS_DIP6_SMD_W8.3mm": "ze2/PhotoMOS_DIP6_SMD",
             "Fuse_Littelfuse_242_SMD_L8.4mm_D3.0mm": "ze2/Fuse_242"}
 BLACK, NYLON, METAL, TAN, DGREY = (0.09, 0.09, 0.10), (0.92, 0.89, 0.80), (0.78, 0.78, 0.80), (0.80, 0.68, 0.45), (0.22, 0.22, 0.24)

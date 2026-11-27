@@ -37,12 +37,16 @@ they're decoded from logs.
   works while the bleed time constant is under ~4 s: measure it ([BRINGUP](../docs/BRINGUP.md)) and tune.
   In PRECHARGE and CLOSING the deadline is checked first, losing start permission (a soft trip) aborts, and so
   does a link above 108 % of pack + 4 V (sensor or BMS data wrong).
-  Any fault (weld, bus sense invalid, precharge timeout, main+ not closed or decaying, link implausible,
+  The precharge-coil current (U8 MultiSense, channel 0) must sit in its window once settled in PRECHARGE (an
+  open coil, harness, driver supply or master FET, or a shorted coil, is named before main+ is commanded) and
+  read ~0 throughout CLOSED (a precharge high side conducting while off would hold the link up at key-off).
+  Any fault (weld, coil current, bus sense invalid, precharge timeout, main+ not closed or decaying, link implausible,
   permission lost mid-close, link collapse, a control-loop stall) is latched and is a hard trip.
   Stage 2 never runs the sequencer.
 - **Taps:** OPTO_EN only in CT_CLOSED (verified) with the analog island healthy (a good DAC write and ADC
   readback within 250 ms) and nothing at soft trip or above.
-- **Watchdog latch:** every kick clocks MCU_EN into U10. A gap over 600 ms between loop passes with coils
+- **Watchdog latch:** every kick clocks MCU_EN into U10 (TPS3431 WDO is a ~200 ms pulse, not a level: U10
+  holds the clear until the next kick). A gap over 600 ms between loop passes with coils
   energised is a latched fault, caught before the next kick can clock MCU_EN back in.
 - **Bus sense:** a reading counts only if both ADC reads and calibration work, the AMC3311 output common
   mode is in range and the differential is not negative (its fail-safe output). No close without a valid

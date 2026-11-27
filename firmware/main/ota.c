@@ -27,7 +27,7 @@ static esp_err_t status_get(httpd_req_t *req)
              "\"cell_min\":%u,\"cell_max\":%u,\"t_min\":%d,\"t_max\":%d,\"rx\":[%lu,%lu,%lu,%lu],"
              "\"log_drop\":%lu,\"ota_allowed\":%s,\"pump_duty\":%.2f,\"pump_fault\":\"%s\","
              "\"ntc_pullup_ohm\":[%.0f,%.0f,%.0f],\"ntc_pullup_v\":[%.2f,%.2f,%.2f],\"ntc_fit\":%s,"
-             "\"link_mv\":%ld,\"taps\":%s,\"island_ok\":%s}",
+             "\"link_mv\":%ld,\"coil_ma\":%ld,\"taps\":%s,\"island_ok\":%s}",
              g_safety.level, g_safety.reason, contactors_state(), gateway_state(), g_pack.soc_pct,
              g_pack.cell_min_mv, g_pack.cell_max_mv, g_pack.temp_min_c, g_pack.temp_max_c,
              (unsigned long)g_stats.rx[0], (unsigned long)g_stats.rx[1], (unsigned long)g_stats.rx[2],
@@ -35,7 +35,7 @@ static esp_err_t status_get(httpd_req_t *req)
              pump_duty(), pump_fault(), g_spoof.fit[0].rth, g_spoof.fit[1].rth, g_spoof.fit[2].rth,
              g_spoof.fit[0].vth, g_spoof.fit[1].vth, g_spoof.fit[2].vth,
              g_spoof.fit[0].valid && g_spoof.fit[1].valid && g_spoof.fit[2].valid ? "true" : "false",
-             (long)contactors_link_mv(), g_safety.taps_enabled ? "true" : "false", g_spoof.island_ok ? "true" : "false");
+             (long)contactors_link_mv(), (long)contactors_coil_ma(), g_safety.taps_enabled ? "true" : "false", g_spoof.island_ok ? "true" : "false");
     httpd_resp_set_type(req, "application/json");
     return httpd_resp_sendstr(req, b);
 }

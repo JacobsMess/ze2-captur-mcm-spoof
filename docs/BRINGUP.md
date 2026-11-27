@@ -25,6 +25,7 @@ Captur pack on its own, LV connector to J2 (see the README table), J3 left open,
 |---|---|---|
 | Keep-alive and decode | Key-on (12 V on J1 IG) | 0x0F5 every 20 ms, UDS replies decoded: cells, sum, temps, SOC plausible; cell sum agrees with 68 x extremes |
 | Weld check | Key-on with J3 open | Dead link (< 20 V) seen, precharge contactor clicks |
+| Precharge-coil sense | Key-on, status page `coil_ma` while precharging, then closed; repeat with the precharge coil unplugged | ~150-300 mA while precharging (typical K; the window is 60-700), 0 when closed (off limit 80: check the zero reading sits well under it); unplugged: "precharge coil current low" within ~60 ms |
 | Open main+ (no load) | J3 open: there is no link capacitor, so the link never rises | "precharge timeout" fault after 3 s, latched; key-off clears it |
 
 ## 3. Captur pack into a dummy link (no car)

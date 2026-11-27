@@ -91,10 +91,31 @@ def test_high_side_drivers_inputs_on_input_pins(parts):
     for ref, in0, in1 in (("U8", "HS_PRE_R", "HS_MAINP_R"), ("U9", "HS_MAINN_R", "HS_BMS_R")):
         n = parts[ref]["nets"]
         assert (n["1"], n["8"]) == (in0, in1), ref
-        assert all(n[p] == "GND" for p in "23456"), ref
+        assert n["2"] == n["4"] == n["6"] == "GND", ref
         ms = n["7"]
         assert any(set(parts[r]["nets"].values()) == {ms, "GND"} and parts[r]["val"] == "1k" for r in parts), \
             f"{ref} MultiSense needs 1k to GND"
+    assert parts["U9"]["nets"]["3"] == parts["U9"]["nets"]["5"] == "GND", "U9 diagnostics unused"
+
+
+def test_coil_current_sense(parts):
+    # U8 MultiSense channel 0 (precharge coil): SEn high through ST's 15k Rprot, SEL0/SEL1 low; sense 1k at the
+    # pin, then 15k + 10n into ADC1 (IO9, ch8), so VSENSEH (<= 6.6 V) can't overdrive the ESP32
+    n = parts["U8"]["nets"]
+    between = lambda a, b: [r for r, p in parts.items() if set(p["nets"].values()) == {a, b}]
+    assert n["5"] == n["6"] == "GND" and n["1"] == "HS_PRE_R" and n["13"] == "COIL_PRE", "channel 0 = precharge"
+    assert parts["U8"]["fp"][1].endswith("_GND4-6"), "GND bar must not short SEn (pin 3)"
+    assert [parts[r]["val"] for r in between("+3V3", n["3"])] == ["15k"]
+    assert [parts[r]["val"] for r in between(n["7"], "MS_ADC")] == ["15k"]
+    assert [parts[r]["val"] for r in between("MS_ADC", "GND")] == ["10n"]
+    esp = parts["U4"]["nets"]
+    assert (esp["17"], esp["29"]) == ("MS_ADC", "SPI_CS3"), "IO9 ADC, IO36 CS3"
+    cfg = (ROOT / "firmware" / "main" / "config.h").read_text()
+    assert "#define PIN_MS_ADC       9 " in cfg and "#define PIN_SPI_CS3      36 " in cfg
+    fp = pcbnew.FootprintLoad(str(ROOT / "hw" / "lib" / "ze2.pretty"), parts["U8"]["fp"][1])
+    bar = [p for p in fp.Pads() if p.GetNumber() == "4" and p.GetSize().y > pcbnew.FromMM(0.5)][0]
+    pin3 = [p for p in fp.Pads() if p.GetNumber() == "3"][0]
+    assert pcbnew.ToMM(bar.GetPosition().y) - pcbnew.ToMM(bar.GetSize().y) / 2 > pcbnew.ToMM(pin3.GetPosition().y) + 0.14
 
 
 def test_bypass_relay_contact_map(parts):
@@ -149,14 +170,14 @@ def test_photomos_on_maker_land_pattern(parts):
 
 
 def test_hv_feeds_fault_protected(parts):
-    # tap ladder: a DC-rated fuse in series with each end resistor; even a tap-to-tap harness short draws > 4x its
-    # rating. Bus sense: the 10k ends keep any short in the divider within each resistor's 1 W.
+    # tap ladder: a DC-rated fuse in series with each end resistor; even a tap-to-tap harness short draws >= 10x
+    # its rating (Littelfuse 242: 1000 % opens in < 2 ms; 300 % may take 10 s). Bus sense: the 10k ends keep any short in the divider within each resistor's 1 W.
     assert parts["F3"]["nets"] == {"1": "BUS_P", "2": "BUS_P_FS"} and parts["F4"]["nets"] == {"1": "BUS_N_FS", "2": "BUS_N"}
     assert all(parts[f]["mpn"] == "Littelfuse 0242.050UR" for f in ("F3", "F4"))
     assert {net(parts, "RF1", 1), net(parts, "RF1", 2)} == {"BUS_P_FS", "DIV_TOP_IN"}
     assert {net(parts, "RF2", 1), net(parts, "RF2", 2)} == {"DIV_BOT_IN", "BUS_N_FS"}
     r = lambda ref: float(parts[ref]["val"].split()[0].rstrip("k")) * (1000 if "k" in parts[ref]["val"].split()[0] else 1)
-    assert 150.0 / (r("RF1") + r("RF2") + 2 * 11.3) > 4 * 0.050
+    assert 150.0 / (r("RF1") + r("RF2") + 2 * 11.3) >= 10 * 0.050
     for ref in ("RF3", "RF4"):
         assert 150.0 ** 2 / (2 * r(ref)) <= 1.0 * 1.15 and 150.0 ** 2 / (r(ref) + 400e3) < 1.0
     assert not any("fusible" in p["val"] or "fusible" in p["mpn"] for p in parts.values())

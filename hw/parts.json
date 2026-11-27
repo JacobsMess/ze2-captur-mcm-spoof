@@ -633,7 +633,7 @@
    "14": "USB_DP",
    "15": "CAN3_INT",
    "16": "NC_IO46",
-   "17": "SPI_CS3",
+   "17": "MS_ADC",
    "18": "IG_SENSE",
    "19": "SPI_MOSI",
    "20": "SPI_SCK",
@@ -645,7 +645,7 @@
    "26": "NC_IO45",
    "27": "BOOT",
    "28": "PUMP_SENSE",
-   "29": "NC_IO36",
+   "29": "SPI_CS3",
    "30": "NC_IO37",
    "31": "CAN2_INT",
    "32": "SPI_CS",
@@ -1844,14 +1844,14 @@
  "U8": {
   "fp": [
    "ze2",
-   "ST_PowerSSO-16_3.9x4.9mm_P0.5mm_EP2.2x3.9mm"
+   "ST_PowerSSO-16_3.9x4.9mm_P0.5mm_EP2.2x3.9mm_GND4-6"
   ],
   "val": "VND7050AJ",
   "mpn": "VND7050AJTR",
   "nets": {
    "1": "HS_PRE_R",
    "2": "GND",
-   "3": "GND",
+   "3": "MS_SEN",
    "4": "GND",
    "5": "GND",
    "6": "GND",
@@ -3365,8 +3365,8 @@
    "Resistor_SMD",
    "R_2512_6332Metric"
   ],
-  "val": "330 1W",
-  "mpn": "25121WJ0331T4E 330R 1W 2512",
+  "val": "100 1W",
+  "mpn": "25121WF1000T4E 100R 1W 2512 1%",
   "nets": {
    "1": "BUS_P_FS",
    "2": "DIV_TOP_IN"
@@ -3383,8 +3383,8 @@
    "Resistor_SMD",
    "R_2512_6332Metric"
   ],
-  "val": "330 1W",
-  "mpn": "25121WJ0331T4E 330R 1W 2512",
+  "val": "100 1W",
+  "mpn": "25121WF1000T4E 100R 1W 2512 1%",
   "nets": {
    "1": "DIV_BOT_IN",
    "2": "BUS_N_FS"
@@ -4158,6 +4158,60 @@
   "pos": [
    101.0,
    80.5
+  ],
+  "rot": 0,
+  "note": ""
+ },
+ "R105": {
+  "fp": [
+   "Resistor_SMD",
+   "R_0805_2012Metric"
+  ],
+  "val": "15k",
+  "mpn": "15k 0805 1%",
+  "nets": {
+   "1": "MSENSE_U8",
+   "2": "MS_ADC"
+  },
+  "pos": [
+   23.2,
+   54.0
+  ],
+  "rot": 0,
+  "note": ""
+ },
+ "C52": {
+  "fp": [
+   "Capacitor_SMD",
+   "C_0805_2012Metric"
+  ],
+  "val": "10n",
+  "mpn": "10n 0805 X7R",
+  "nets": {
+   "1": "MS_ADC",
+   "2": "GND"
+  },
+  "pos": [
+   22.4,
+   51.0
+  ],
+  "rot": 90,
+  "note": ""
+ },
+ "R106": {
+  "fp": [
+   "Resistor_SMD",
+   "R_0805_2012Metric"
+  ],
+  "val": "15k",
+  "mpn": "15k 0805 1%",
+  "nets": {
+   "1": "+3V3",
+   "2": "MS_SEN"
+  },
+  "pos": [
+   17.8,
+   66.8
   ],
   "rot": 0,
   "note": ""

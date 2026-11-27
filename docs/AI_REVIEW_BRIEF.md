@@ -14,7 +14,7 @@ board sits between the MCM and the new pack and makes the MCM believe it still h
 - **Stage 2 (later):** 68S, about 260 V, MCM removed, ZombieVerter VCU + Toyota inverter. The board is then
   only a CAN gateway; its HV side is not used.
 
-Status: v0.10, designed, simulated, not built. Three AI reviews have been folded in already (v0.6, v0.7 and
+Status: v0.11, designed, simulated, not built. Three AI reviews have been folded in already (v0.6, v0.7 and
 v0.10 in the git log). Routing is by KiCadRoutingTools (`hw/krt_route.py`). Bench and vehicle checks still to
 do are listed in `docs/BRINGUP.md`. The designer is not an electronics engineer. The design was
 produced with an AI assistant, so assume nothing has been checked by a human expert.
@@ -31,10 +31,10 @@ ESP32-S3-WROOM-1 module, 4-layer, 120 x 98 mm, parts on top, made and assembled 
 | Bypass relay | K4 (DPDT) joins the two IMA halves whenever the board is unpowered or not ready | Omron G6K-2F-Y |
 | Switched terminations | 120 ohm at the board end of each split half, only while K4 is energised, each behind a solder jumper (open by default) | K4 spare contacts, AQY212GS photoMOS |
 | CAN4 | Dash bus tap, listen only in stage 1 | MCP2518FD + TJA1051 |
-| Cell taps | A 16-resistor divider across the real pack bus gives the MCM nine balanced "block" voltages. Two optoMOS connect it, each end through 330 ohm and a 50 mA 250 V DC fuse; unpowered = taps float = MCM faults safely | 10k 0.1 %, AQV214EH x2, Littelfuse 0242.050UR x2 |
+| Cell taps | A 16-resistor divider across the real pack bus gives the MCM nine balanced "block" voltages. Two optoMOS connect it, each end through 100 ohm and a 50 mA 250 V DC fuse; unpowered = taps float = MCM faults safely | 10k 0.1 %, AQV214EH x2, Littelfuse 0242.050UR x2 |
 | Bus sense | Isolated measurement of the pack bus voltage for weld, precharge and closure checks; 10k 1 W ends hold any divider short within rating | AMC3311 (isolated amplifier with its own isolated supply) |
 | Analog island | Fakes the three NTC temperature inputs and adds a small offset to the Hall current-sensor signal (steers the MCM's own SOC count). Runs from the MCM's 5 V sensor supply, I2C-isolated from the rest | MCP4728 DAC, MCP6004, ADS1115 x2, ISO1540 |
-| Contactor drive | Drives the Captur pack's precharge and main contactors and its BMS 12 V feed | VND7050AJ high-side x2 (one channel spare); low-side master FET driven by an enable latch through a 5 V gate buffer |
+| Contactor drive | Drives the Captur pack's precharge and main contactors and its BMS 12 V feed | VND7050AJ high-side x2 (one channel spare), U8 MultiSense channel 0 reads the precharge-coil current into the ESP32 ADC; low-side master FET driven by an enable latch through a 5 V gate buffer |
 | Watchdog latch | Each watchdog kick (WDI rising edge) clocks MCU_EN into a D flip-flop whose Q drives the master FET. A watchdog timeout clears the flip-flop; firmware that notices its own stall on resume latches a fault before the next kick, so coils never come back on their own. An RC gives a power-on clear, squared by a Schmitt buffer for CLR | TPS3431, SN74LVC1G74, SN74LVC1G17, SN74LV1T34 |
 | Pump readback | The pump line drives a threshold FET's gate; the FET pulls a 3.3 V GPIO low. The GPIO never sees the 12-16 V line | 2N7002 |
 

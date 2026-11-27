@@ -6,6 +6,9 @@
 // verify: the link must reach CLOSED_MIN_PCT and must not decay (an open main+ over a charged link reads ~100 %
 // too). An unfinished close aborts (latched fault) if start permission goes, the precharge deadline passes, or
 // the link reads implausibly above the pack.
+// Precharge-coil current (U8 MultiSense): in its window once settled during PRECHARGE (an open coil, harness,
+// driver supply or master FET, or a shorted coil, is named as such, before main+ is ever commanded), and ~0
+// throughout CLOSED (a high side stuck on would keep the link live through the precharge resistor at key-off).
 // The coil-return master FET follows U10, a flip-flop that each watchdog kick (WDI edge) clocks MCU_EN into and
 // the TPS3431 clears on a timeout. A stall the firmware notices on resume is a latched fault, so the next kick
 // can never quietly re-energise coils the firmware has stopped tracking.
@@ -24,4 +27,5 @@ bool contactors_faulted(void);
 const char *contactors_fault(void);
 void contactors_clear_fault(void);     // key-off only
 void contactors_kick_watchdog(uint32_t now_ms);   // first thing in every control-loop pass
+int32_t contactors_coil_ma(void);     // last precharge-coil reading (status page); -1 if none
 int32_t contactors_link_mv(void);      // last link reading (status page); -1 if it wasn't valid

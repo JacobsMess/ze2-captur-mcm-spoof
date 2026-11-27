@@ -10,9 +10,10 @@ static ct_state_t s_st = CT_OPEN;
 static uint32_t s_t0;
 static const char *s_fault = "";
 static bool s_wdi;
-static volatile int32_t s_link_mv;
+static volatile int32_t s_link_mv, s_coil_ma = -1;
 
 int32_t contactors_link_mv(void) { return s_link_mv; }
+int32_t contactors_coil_ma(void) { return s_coil_ma; }
 
 // U10 clocks MCU_EN into the coil-return master FET on each WDI rising edge, and the watchdog clears it. Give
 // it an edge now, so enabling or disabling takes effect at once rather than at the next kick.
@@ -35,6 +36,19 @@ static void all_open(void)
     drive(false, false);
     hal_out(OUT_HS_MAINN, false);   // spare channel: no main- contactor on the Captur
     master_enable(false);
+}
+
+static void fault(const char *why);
+
+// false (and a latched fault) if the precharge-coil current is outside [min_ma, max_ma]
+static bool coil_ok(int32_t min_ma, int32_t max_ma, const char *low, const char *high)
+{
+    int32_t ma;
+    if (!hal_precharge_coil_ma(&ma)) { fault("precharge coil sense invalid"); return false; }
+    s_coil_ma = ma;
+    if (ma < min_ma) { fault(low); return false; }
+    if (ma > max_ma) { fault(high); return false; }
+    return true;
 }
 
 static void enter(ct_state_t st, uint32_t now_ms)
@@ -119,6 +133,7 @@ void contactors_tick(uint32_t now_ms, bool want_closed, bool may_start)
         // a soft trip (or anything else that withdraws start permission) aborts a close that hasn't finished
         if (s_st != CT_CLOSED && !may_start) { fault("start permission withdrawn during close"); return; }
     }
+    if (s_st == CT_OPEN || s_st == CT_FAULT) s_coil_ma = -1;
     switch (s_st) {
     case CT_OPEN:
         if (!want_closed || !may_start || !g_pack.valid || pack_mv <= 0) break;
@@ -132,6 +147,11 @@ void contactors_tick(uint32_t now_ms, bool want_closed, bool may_start)
     case CT_PRECHARGE:
         if (dt > PRECHARGE_TIMEOUT_MS) {   // deadline first: a late rise is still a failed precharge
             fault("precharge timeout (short on the bus?)");
+        } else if (dt >= COIL_SETTLE_MS &&
+                   !coil_ok(COIL_PRE_MIN_MA, COIL_PRE_MAX_MA,
+                            "precharge coil current low: coil, harness, driver supply or master FET open",
+                            "precharge coil current high: coil shorted")) {
+            break;
         } else if ((int64_t)bus_mv * 100 >= pack_mv * PRECHARGE_PCT) {
             drive(true, true);                // main+ closes with precharge still holding the link up
             ESP_LOGI(TAG, "precharged in %lu ms", (unsigned long)dt);
@@ -156,6 +176,8 @@ void contactors_tick(uint32_t now_ms, bool want_closed, bool may_start)
         }
         break;
     case CT_CLOSED:
+        if (dt >= COIL_SETTLE_MS &&
+            !coil_ok(0, COIL_OFF_MAX_MA, "", "precharge driver conducting while commanded off")) break;
         if ((int64_t)bus_mv * 100 < pack_mv * BUS_COLLAPSE_PCT) fault("bus collapsed while closed");
         break;
     case CT_FAULT:

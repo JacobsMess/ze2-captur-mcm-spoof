@@ -88,7 +88,7 @@ void board_hal_init(void)
     dc.device_address = ADS1115_B_ADDR;
     i2c_master_bus_add_device(i2c, &dc, &s_adc[1]);
 
-    // ADC1: AMC3311 outputs on ch0/ch1, board supply divider (IG_SENSE) on ch9. A failed init leaves the
+    // ADC1: AMC3311 outputs on ch0/ch1, U8 MultiSense on ch8, board supply divider (IG_SENSE) on ch9. A failed init leaves the
     // handles NULL and every read invalid.
     adc_oneshot_unit_init_cfg_t u = {.unit_id = ADC_UNIT_1};
     adc_oneshot_chan_cfg_t cc = {.atten = ADC_ATTEN_DB_12, .bitwidth = ADC_BITWIDTH_DEFAULT};
@@ -98,6 +98,7 @@ void board_hal_init(void)
         adc_oneshot_config_channel(s_adc1, ADC_CHANNEL_0, &cc) != ESP_OK ||
         adc_oneshot_config_channel(s_adc1, ADC_CHANNEL_1, &cc) != ESP_OK ||
         adc_oneshot_config_channel(s_adc1, ADC_CHANNEL_9, &cc) != ESP_OK ||
+        adc_oneshot_config_channel(s_adc1, ADC_CHANNEL_8, &cc) != ESP_OK ||
         adc_cali_create_scheme_curve_fitting(&cf, &s_cali) != ESP_OK) {
         ESP_LOGE(TAG, "ADC1 init failed: bus sense and ignition invalid");
         s_cali = NULL;
@@ -200,6 +201,14 @@ bool hal_bus_mv(int32_t *mv)
     if (cm < AMC_CM_MIN_MV || cm > AMC_CM_MAX_MV || diff < AMC_DIFF_MIN_MV) return false;
     // divider RF3 + RS1-RS4 + RS5 + RF4 over RS5: x90.4, 181 V full scale. Trim HV_DIV_X1000 against a meter.
     *mv = diff < 0 ? 0 : (int32_t)((int64_t)diff * HV_DIV_X1000 / 1000);
+    return true;
+}
+
+bool hal_precharge_coil_ma(int32_t *ma)
+{
+    int v;
+    if (!adc_mv(ADC_CHANNEL_8, &v)) return false;
+    *ma = (int32_t)((int64_t)v * COIL_SENSE_K_TYP / COIL_SENSE_R);
     return true;
 }
 
