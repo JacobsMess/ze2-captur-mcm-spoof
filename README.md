@@ -1,6 +1,6 @@
 # ZE2 Captur MCM spoof board
 
-> **Current version: v0.11** (tag [`v0.11`](../../releases/tag/v0.11), the head of `main`). Everything in this
+> **Current version: v0.11, the head of `main`.** Everything in this
 > repository (board, fab files in `hw/out/jlc/`, firmware, images, docs) describes v0.11. Earlier versions are kept
 > only as git tags and are **superseded: do not order from them**. See [Versions](#versions).
 
@@ -255,19 +255,19 @@ island-health report.
 
 ## Versions
 
-Only the latest version is current. Every earlier tag is kept for history and is superseded: its fab files,
-firmware and docs are out of date. None has been built yet.
+Only the head of `main` is current. Earlier versions are kept in the git history for reference and are superseded: their
+fab files, firmware and docs are out of date. None has been built yet.
 
-| Tag | Status | What changed |
+| Version | Status | What changed |
 |---|---|---|
-| **v0.11** | **Current** (unbuilt) | Datasheet pass: precharge-coil current sense, 100 R tap-ladder ends, Littelfuse 242 land pattern |
-| v0.10 | Superseded | Third design review: close verification, island checks, boot latch, pump readback |
-| v0.9 | Superseded | Re-routed with KiCadRoutingTools |
-| v0.8 | Superseded | Board measures the remaining unknowns itself |
-| v0.7 | Superseded | Second design review |
-| v0.6 | Superseded | First design review |
-| v0.5 | Superseded | MCP2518FD CAN controllers, LCSC BOM and cost |
-| v0.4 | Superseded | First published board (MCP2515) |
+| **v0.11** (`main`) | **Current** (unbuilt) | Datasheet pass: precharge-coil current sense, 100 R tap-ladder ends, Littelfuse 242 land pattern |
+| [v0.10](../../tree/3afa31d) | Superseded, do not order | Third design review: close verification, island checks, boot latch, pump readback |
+| [v0.9](../../tree/29f52b2) | Superseded, do not order | Re-routed with KiCadRoutingTools |
+| [v0.8](../../tree/1f5a51c) | Superseded, do not order | Board measures the remaining unknowns itself |
+| [v0.7](../../tree/f21ef40) | Superseded, do not order | Second design review |
+| [v0.6](../../tree/9367515) | Superseded, do not order | First design review |
+| [v0.5](../../tree/460502a) | Superseded, do not order | MCP2518FD CAN controllers, LCSC BOM and cost |
+| [v0.4](../../tree/0be7c80) | Superseded, do not order | First published board (MCP2515) |
 
 ## Feedback
 
