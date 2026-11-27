@@ -2,7 +2,7 @@
 
 > **Current version: v0.11, the head of `main`.** Everything in this
 > repository (board, fab files in `hw/out/jlc/`, firmware, images, docs) describes v0.11. Earlier versions are kept
-> only as git tags and are **superseded: do not order from them**. See [Versions](#versions).
+> only in the git history and are **superseded: do not order from them**. See [Versions](#versions).
 
 A man-in-the-middle board that lets a stock Honda Insight ZE2 run on a Renault Captur E-Tech
 lithium pack. The stock MCM stays in charge; the board only changes what it measures: cell taps,
